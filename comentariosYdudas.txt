@@ -1,0 +1,78 @@
+DUDAS:
+0) tengo q adivinar q fecha ingresa o le puedo decir "che, en q fomrato vas a meter la fecha? 
+y dsps a q queres convertir
+1) Ingreso de datos, puedo pedir la fecha como dd mm aaaa con ESPAcios al usuario o va con barras si o si?
+2) 2 listas una anio bisiesto otra no..?
+
+3) Ambiguedad con fechas?? ¿Cuáles son las cotas numéricas, se debería ir hasta el año 0 y el año 9999?
+
+rta: Podes definir vos, por lo general se considera >= 50 corresponde siglo XX (1900) 
+mientras que <50 corresponde al siglo XXI (2000)
+
+Entonces el rango de fechas es este?
+
+1950 1960 1970... 2049
+
+
+4) Puedo usar fomula para conversor de gregoriano a juliano??
+
+def is_leap_year(year):
+    """ if year is a leap year return True
+        else return False """
+    if year % 100 == 0:
+        return year % 400 == 0
+    return year % 4 == 0
+
+def doy(Y,M,D):
+    """ given year, month, day return day of year
+        Astronomical Algorithms, Jean Meeus, 2d ed, 1998, chap 7 """
+    if is_leap_year(Y):
+        K = 1
+    else:
+        K = 2
+    N = int((275 * M) / 9.0) - K * int((M + 9) / 12.0) + D - 30
+    return N
+
+def ymd(Y,N):
+    """ given year = Y and day of year = N, return year, month, day
+        Astronomical Algorithms, Jean Meeus, 2d ed, 1998, chap 7 """    
+    if is_leap_year(Y):
+        K = 1
+    else:
+        K = 2
+    M = int((9 * (K + N)) / 275.0 + 0.98)
+    if N < 32:
+        M = 1
+    D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
+    return Y, M, D
+
+
+
+COMENTARIOS y pensamientos
+
+Puedo pedir un caracter de validacion del tipo de fecha, 
+g gregoriano
+
+
+
+;Validar fechas en rangos esperados
+;y tambien como corte de suma de simbolos
+;             finLoop, "N"
+;mov          byte[finNum], "S" ;pongo una S para dar el okey de q se ingreso bien
+;call            validarFyC ;validamos. en esa rutina modificamos el valor de 'inputValido'
+;cmp             word[FinNum], "N" ;N - no valido / S - valido
+;je              ingresoDatos
+
+
+; mov             byte[inputValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
+;        ;chequeo q haya casteado los 2 valores enteros ( por ej 3 E daria 1)
+;        cmp             rax,2 ;
+;        jl              invalido
+
+
+;concatenar un simbolo a la vez en el loop
+; en vez de 4 va 1
+; mov eax, [fizz]
+; mov [buffer], eax
+; mov eax, [buzz]
+; mov [buffer+4], eax
