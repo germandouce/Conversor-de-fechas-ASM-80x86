@@ -123,6 +123,7 @@ ingFechaJul:
     call            printf
     add             rsp,32   
 
+;#FALTA cambiar x una solo rotulo "FinIngreso fecha"
     finIngFechaGrego:
     
     finIngFechaRom:
@@ -136,7 +137,10 @@ ingFechaJul:
 ret
 
 
-validarCaracterFecha:
+;#FALTA Meter la validacion dsps del fin de prgrma.
+;es mala practica poner rutinas internas dentro del programa ppal
+;#FALTA agregar rotulo de fin de programa.
+validarCaracterFecha:   
 
     ;mov             byte[inputValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
     ; guardo y leo caracter "casteo? esta al pedo esto #DUDA"
