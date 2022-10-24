@@ -7,6 +7,12 @@
 # - Formato Romano: XIV / X / MMXX
 # - Formato Juliano (DDD/AA): 288/20
 
+______Contador de tiempo______________________________________________
++ 5hrs un dia hace un tiempo
++ 5hrs 15 min 23/10/2022 (estructura gral del prgrm)
+_______________________________________________
+
+
 Buenas, quería aclarar un par de dudas que tenía sobre la consigna del TP 20.
 -        ¿Se debería poder convertir fechas del formato Juliano al Romano y viceversa?
 
