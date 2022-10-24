@@ -24,17 +24,25 @@ section     .data
 
     debug                     db  "debug",10,0
 
+    ;____ msjs ingresos usuario ___
     msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (g-gregoriano r-romano j-juliano)",10,0
-    FormatoCaracterIndicFecha db  "%s"
-
-
+    
     msjIngFechaFormatoGrego   db  "Ingrese una fecha en formato gregoriano (DD/MM/AAAA)",10,0
     msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD/MM/AAAA)",10,0
     msjIngFechaFormatoJul     db  "Ingrese una fecha en formato Juliano (DDD/AA)",10,0
+
+    ;___ formatos de ingreso ___
+    FormatoCaracterIndicFecha db  "%s"
     
     formatoIngFechaGrego      db "%hi %hi %hi",0 ;hi (16 bits, 2 bytes 1 word)
     formatoIngFechaRom        db "%s %s %s",0 ;%s string
-    formatoIngFechaRJul       db "%hi %hi"
+    formatoIngFechaRJul       db "%hi %hi",0 ;
+
+    ;___ msjs informe usuario _____
+
+    msjInformeFechaGrego      db "Fecha en formato Gregoriano: %hi/%hi/%hi",10,0
+    msjInformeFechaRom        db "Fecha en formato Romano: %s/%s/%s",10,0
+    msjInformeFechaJul        db "Fecha en formato Juliano: %hi/%hi",10,0
 
 section     .bss
     
@@ -55,18 +63,30 @@ section     .bss
     mesJul                      resw    1 
     anioJul                     resw    1
 
-    ;caracter indicador de fecha
-    ingCaracterFormatoFecha     resb    1
-    ingCaracterValido           resb    1
-    caracterFormatoFecha        resb    1
+    ;indicadores de validez
+    esValido                    resb    1 ;'S' - Si 'N'- No
+    fechaEsValida               resb    1 ;'S' - Si 'N'- No
 
+    ;caracter indicador de fecha
+    ;deberia lllamarse string o algo asi
+    ingCaracterFormatoFecha     resb    1
 
 
 section     .text
 
 main:
 
-ingresoDatos:
+    call            ingresoFormatoFecha
+    
+    call            ingresoFecha
+
+    call            mostrarConversiones
+
+
+ret
+
+ingresoFormatoFecha:
+    
     ;imprimo por pantalla pedido de fecha
     
     ;imprimo por pantalla pedido del formato de fecha de ingreso
@@ -81,9 +101,31 @@ ingresoDatos:
     call            gets ;solo lee lo ingresado como texto. No castea nada
     add             rsp,32
 
-    
     call            validarCaracterFecha ;validar que el caracter del formato de fecha es correcto
+    cmp             byte[esValido],"N"
+    je		        ingresoFormatoFecha     
+
+    ;hasta que no ingrese un caracter valido (g r O J) no sale de la rutina
+    ret  
+
+    validarCaracterFecha:   
+
+        ;mov             byte[inputValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
+        ; guardo y leo caracter "casteo? esta al pedo esto #DUDA"
+        mov             rcx,ingCaracterFormatoFecha; tomado el ingreso por teclado fuere cual fuere
+        mov             rdx,FormatoCaracterIndicFecha ; formatea el ingreso como lo escribi
+        mov             r8, caracterFormatoFecha ;xa guardar el valor del caracter
+        sub             rsp,32
+        call            sscanf
+        add             rsp,32
+
+        ;FALTA LA VAILDACION por tabla g r O J
     
+        ret
+
+
+ingresoFecha:   
+
     cmp             word[caracterFormatoFecha], "g" ;gregoriano
     je              ingFechaGrego
 
@@ -93,64 +135,361 @@ ingresoDatos:
     cmp             word[caracterFormatoFecha], "j" ;juliano
     je              ingFechaJul
 
-ingFechaGrego:
+    ;_______________________Ingreso Fecha Gregoriana ____________________________
+    ingFechaGrego:
     
-    mov             rcx, msjIngFechaFormatoGrego
-    sub             rsp,32
-    call            printf
-    add             rsp,32   
+        mov             rcx, msjIngFechaFormatoGrego
+        sub             rsp,32
+        call            printf
+        add             rsp,32   
 
-    jmp             finIngFechaGrego
-    ;pido dia mes y anio con espacio (rcx la variable donde guardo)
-    ;mov             rcx,inputFilCol
-    ;sub             rsp,32
-    ;call            gets ;solo lee lo ingresado como texto. No castea nada
-    ;add             rsp,32
+        ;pido dia mes y anio con espacio (rcx la variable donde guardo)
+        ;mov             rcx,inputFilCol
+        ;sub             rsp,32
+        ;call            gets ;solo lee lo ingresado como texto. No castea nada
+        ;add             rsp,32
+
+        call             validarFechaGrego (Valida q sean 3 parametrs )
+        cmp              [fechaEsValida],"N"
+        je               ingFechaGrego
+
+        call             validarFechaGeneral 
+        ;(Valida anios bissietso, fecha 
+        ;existe etc)
+        cmp              [fechaEsValida],"N"
+        je               ingFechaGrego
+
+        ;si la fecha es valida hago los pasajes necesarios
+
+        call            convertirGregoAJul
+        call            convertirGregoARom
+
+        jmp              finIngresoFecha
+        
+        validarFechaGrego:
+            ; mov		rcx,inputFilCol
+            ; mov		rdx,formatInputFilCol
+            ; mov		r8,fila
+            ; mov		r9,columna
+            ; sub		rsp,32
+            ; call	sscanf
+            ; add		rsp,32
+
+            ; cmp		rax,2
+            ; jl		finValidarFechaGrego
+
+            fin 
     
-ingFechaRom:
+    ;________________________Ingreso fecha Romana __________________________________
+    ingFechaRom:
 
-    mov             rcx, msjIngFechaFormatoRom
-    sub             rsp,32
-    call            printf
-    add             rsp,32   
+        mov             rcx, msjIngFechaFormatoRom
+        sub             rsp,32
+        call            printf
+        add             rsp,32   
 
-    jmp             finIngFechaRom
+        ;pido dia mes y anio con espacio (rcx la variable donde guardo)
+        ;mov             rcx,inputFilCol
+        ;sub             rsp,32
+        ;call            gets ;solo lee lo ingresado como texto. No castea nada
+        ;add             rsp,32
 
-ingFechaJul:
+        call            validarFechaRom ;   valido q sean 3 parametros y q sean letras
+        cmp             [fechaEsValida],"N"
+        je              ingFechaRom
 
-    mov             rcx, msjIngFechaFormatoJul
-    sub             rsp,32
-    call            printf
-    add             rsp,32   
+        call            convertirRomAGrego
+        ;convierto sea cual sea la fecha ingresada a gregoriano,
+        ;luego valido con la rutina para ese tipo de fechas
+        ;q la fecha exista, los anios esten en el rango valido etc
+        call            validarFechaGeneral
+        cmp             [fechaEsValida],"N"
 
-;#FALTA cambiar x una solo rotulo "FinIngreso fecha"
-    finIngFechaGrego:
+        ;como ingreso en Rom y ya pase a Grego para validar, 
+        ;solo me queda pasar a Juliano,
+        ;Como A grego ya pase antes, aprovecho la rutina q tengo
+        ;xa ir de Grego a Rom
+
+        call            convertirGregoAJul
+        
+        ;ya tengo convertida la fecha todos los formatos.
+
+        jmp             finIngresoFecha
+        
+
+        validarFechaRom:
+
+            [fechaEsValida],"N"
+
+            ; mov		rcx,inputFilCol
+            ; mov		rdx,formatInputFilCol
+            ; mov		r8,fila
+            ; mov		r9,columna
+            ; sub		rsp,32
+            ; call	sscanf
+            ; add		rsp,32
+
+            ; cmp		rax,2
+            ; jl		finValidarFechaRom
+
+            ;___validar anio___
+            call        validarAnio
+            cmp		    byte[fechaEsValida],"N" ;Letras son correctas
+            je		    finValidarFechaRom
+                        
+            ;___validar mes___ 
+            call        validarMes   ;Letras con correctas
+            cmp		    byte[fechaEsValida],"N"	
+            je		    finValidarFechaRom
+
+            ;___validar dia___
+            call        validarDia ;letras son correctas 
+            cmp		    byte[fechaEsValida],"N"	
+            je		    finValidarFechaRom
+
+            finValidarFechaRom:
+            
+                ret
+
+            validarAnio:
+                ;Valido letras con tabla
+                ;jg
+                
+                mov     byte[fechaEsValida],"S"    
+                finValidarAnio:
+                    ret
+            
+            validarMes: 
+                ;valido letras con tabla
+                
+                mov     byte[fechaEsValida],"S"
+                finValidarMes:
+                    ret
+            
+            validarDia: 
+                ;valido letras con tablas
+                mov     byte[fechaEsValida],"S"
+                finValidarDia:
+                    ret
+
+    ;_____________________Ingreso Fecha Juliana ____________________________
+    ingFechaJul:
+
+        mov             rcx, msjIngFechaFormatoJul
+        sub             rsp,32
+        call            printf
+        add             rsp,32
+
+
+        ;pido dia mes y anio con espacio (rcx la variable donde guardo)
+        ;mov             rcx,inputFilCol
+        ;sub             rsp,32
+        ;call            gets ;solo lee lo ingresado como texto. No castea nada
+        ;add             rsp,32
+
+        call            validarFechaJul ;   valido q sean 2 parametros y q los numeros sean validos
+        cmp             [fechaEsValida],"N"
+        je              ingFechaJul
+
+
+        ;No hay manera de que la fecha jul no sea valida en terminos de
+        ;fechas validas ya que son numeros. Ya valide antes q estos
+        ;estuvieran en el rango esperado.
+        call            convertirJulAGrego
+        
+        ;aprovecho la rutina q ya tengo
+        call            convertirGregoARom
+        
+        ;ya tengo convertida la fecha todos los formatos.
+
+        jmp             finIngresoFecha
+        
+        validarFechaJul:
+
+            [fechaEsValida],"N"
+
+            ; mov		rcx,inputFilCol
+            ; mov		rdx,formatInputFilCol
+            ; mov		r8,fila
+            ; mov		r9,columna
+            ; sub		rsp,32
+            ; call	sscanf
+            ; add		rsp,32
+
+            ; cmp		rax,2
+            ; jl		finValidarFechaRom
+
+            ;___validar anio___
+            call        validarAnio
+            cmp		    byte[fechaEsValida],"N" ; 50 a 49
+            je		    finValidarFechaRom
+
+            ;___validar dia___
+            call        validarDia ;1 a 365
+            cmp		    byte[fechaEsValida],"N"	
+            je		    finValidarFechaRom
+
+            finValidarFechaRom:
+            
+                ret
+
+            validarAnio:
+                ;Valido anio de 50 a 49
+                ;jg
+                
+                mov     byte[fechaEsValida],"S"    
+                finValidarAnio:
+                    ret
+            
+            validarDia: 
+                ;valido dia de 1 a 365
+                mov     byte[fechaEsValida],"S"
+                finValidarDia:
+                    ret
     
-    finIngFechaRom:
+    finIngFecha:
+        
+        mov             rcx, debug
+        sub             rsp,32
+        call            printf
+        add             rsp,32 
+        
 
-    mov             rcx, debug
+        ret
+
+
+mostrarConversiones:
+
+    mov             rcx, msjInformeFechaGrego
     sub             rsp,32
     call            printf
     add             rsp,32 
     
-
-ret
-
-
-;#FALTA Meter la validacion dsps del fin de prgrma.
-;es mala practica poner rutinas internas dentro del programa ppal
-;#FALTA agregar rotulo de fin de programa.
-validarCaracterFecha:   
-
-    ;mov             byte[inputValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
-    ; guardo y leo caracter "casteo? esta al pedo esto #DUDA"
-    mov             rcx,ingCaracterFormatoFecha; tomado el ingreso por teclado fuere cual fuere
-    mov             rdx,FormatoCaracterIndicFecha ; formatea el ingreso como lo escribi
-    mov             r8, caracterFormatoFecha ;xa guardar el valor del caracter
+    mov             rcx, msjInformeFechaRom
     sub             rsp,32
-    call            sscanf
-    add             rsp,32
+    call            printf
+    add             rsp,32 
+
+    mov             rcx, msjInformeFechaJul
+    sub             rsp,32
+    call            printf
+    add             rsp,32 
+
+    ret
+
+
+;------------------------- Rutinas se usan varias veces ---------------------
+;Rutina para validar un fecha en formato gregoriano
+validarFechaGeneral:
+
+            [fechaEsValida],"N"
+
+            ;___validar anio___
+            call        validarAnio
+            cmp		    byte[fechaEsValida],"N" ;esta entre 1950 y 2049 ?
+            je		    finvalidarFechaGeneral
+                        
+            ;___validar mes___ 
+            ;esta entre 1 y 31
+            call        validarMes   ;guarda la pos en el vector de meses para porx validacion     
+            cmp		    byte[fechaEsValida],"N"	
+            je		    finvalidarFechaGeneral
+
+            ;___validar dia___
+            call        validarDia
+            cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
+            je		    finvalidarFechaGeneral
+
+            validarFechaGeneral:
+            
+                ret
+
+            validarAnio:
+                ;entre 1950 y 2049
+                
+                ;jg
+                mov     byte[fechaEsValida],"S"    
+                finValidarAnio:
+                    ret
+            
+            validarMes: ;mes entre 1 y 12 y guarda la pos del mes en posMes
+                ;[posMes]
+                
+                mov     byte[fechaEsValida],"S"
+                finValidarMes:
+                    ret
+            
+            validarDia: 
+                ;pregunto si el dia esta en el rango
+                ; del numero de dias de posMes es
+                ;mov     ebx,posMes
+                ;pregunto si el anio es bisiesto
+                ;call     anioBisiesto
+                ;cmp		  byte[esBisiesto],"S"
+                je        diaAnioBisiesto            
+
+                ;mov     al,[diasMeses + ebx]  
+                ;con dias no bisisestos va a saltar si es 29 de feb xq tengo un 28
+                jmp     diaEnRango
+                ret
+                
+                diaAnioBisiesto:
+                ;mov     al,[diasMesesBisiesto + ebx]  
+                ;con dias bisisestos puede estar hasta el 29
+
+                diaEnRango: ;pregunto si el dia esta en el rango
+                    ;cmp    [dia],al
+                    ;jle
+                    ;bla bla
+                    ;y mayor a 0
+                
+                mov     byte[fechaEsValida],"S"
+                finValidarDia:
+                    ret
+
+
+;---------------------------------------------------------------------------------
+;Convierte la fecha q este guardada en 
+;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
+;a
+;FORMATO ROMANO en diaRom - mesRom  - anioRom
+convertirGregoARom:
+    ret
+
+
+;--------------------------------------------------------------------------------
+;Convierte la fecha q este guardada en  
+;FORMATO GREGORIANO endiaGrego - mesGrego  - anioGreo  
+;a
+;FOMRATO JULIANO en diaJul - mesJul  - anioJul
+convertirGregoAJul:
+    ret
+
+
+;-----------------------------------------------------------------------------------
+;Convierte la fecha q este guardada en diaRom mesRom anioRom 
+;a gergoriano y guarda lo nuevos valores en diaGrego - mesGrego - anioGreo
+convertirRomAGrego:
+    ret
+
+
+;Convierte la fecha q este guardada en  
+;FOMRATO JULIANO en diaJul - mesJul  - anioJul
+;a
+;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
+;------------------------------------------------------------------------
+convertirJulAGrego:
+    ret
+
+
+
+;chequea si un año es bisiesto y coloca en la var esBisiesto "S" o "N" 
+anioBisiesto:
     
-ret
+    mov     byte[esBisiesto],"S"
+    ret
+;---------------------------------------------------------------------
+
+
 
 
