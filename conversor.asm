@@ -149,7 +149,7 @@ ingresoFecha:
         ;call            gets ;solo lee lo ingresado como texto. No castea nada
         ;add             rsp,32
 
-        call             validarFechaGrego (Valida q sean 3 parametrs )
+        call             validarFechaGrego ;(Valida q sean 3 parametrs )
         cmp              [fechaEsValida],"N"
         je               ingFechaGrego
 
@@ -167,6 +167,8 @@ ingresoFecha:
         jmp              finIngresoFecha
         
         validarFechaGrego:
+            mov         [fechaEsValida],"N"        
+            ;asumo no valida y pregunto....
             ; mov		rcx,inputFilCol
             ; mov		rdx,formatInputFilCol
             ; mov		r8,fila
@@ -177,8 +179,11 @@ ingresoFecha:
 
             ; cmp		rax,2
             ; jl		finValidarFechaGrego
-
-            fin 
+            
+            ;si llegue hasta aca es valida       
+            mov         [fechaEsValida],"S" 
+            finValidarFechaGrego: 
+                ret
     
     ;________________________Ingreso fecha Romana __________________________________
     ingFechaRom:
@@ -218,9 +223,6 @@ ingresoFecha:
         
 
         validarFechaRom:
-
-            [fechaEsValida],"N"
-
             ; mov		rcx,inputFilCol
             ; mov		rdx,formatInputFilCol
             ; mov		r8,fila
@@ -244,14 +246,15 @@ ingresoFecha:
 
             ;___validar dia___
             call        validarDia ;letras son correctas 
-            cmp		    byte[fechaEsValida],"N"	
-            je		    finValidarFechaRom
+            ;cmp		    byte[fechaEsValida],"N"	
+            ;je		    finValidarFechaRom
 
             finValidarFechaRom:
             
                 ret
 
             validarAnio:
+                mov         [fechaEsValida],"N"
                 ;Valido letras con tabla
                 ;jg
                 
@@ -260,13 +263,15 @@ ingresoFecha:
                     ret
             
             validarMes: 
+                mov         [fechaEsValida],"N"
                 ;valido letras con tabla
                 
                 mov     byte[fechaEsValida],"S"
                 finValidarMes:
                     ret
             
-            validarDia: 
+            validarDia:
+                mov         [fechaEsValida],"N" 
                 ;valido letras con tablas
                 mov     byte[fechaEsValida],"S"
                 finValidarDia:
@@ -306,8 +311,6 @@ ingresoFecha:
         
         validarFechaJul:
 
-            [fechaEsValida],"N"
-
             ; mov		rcx,inputFilCol
             ; mov		rdx,formatInputFilCol
             ; mov		r8,fila
@@ -326,14 +329,15 @@ ingresoFecha:
 
             ;___validar dia___
             call        validarDia ;1 a 365
-            cmp		    byte[fechaEsValida],"N"	
-            je		    finValidarFechaRom
+            ;cmp		    byte[fechaEsValida],"N"	
+            ;je		    finValidarFechaRom
 
             finValidarFechaRom:
             
                 ret
 
             validarAnio:
+                mov         [fechaEsValida],"N"
                 ;Valido anio de 50 a 49
                 ;jg
                 
@@ -342,7 +346,9 @@ ingresoFecha:
                     ret
             
             validarDia: 
+                mov         [fechaEsValida],"N"
                 ;valido dia de 1 a 365
+                
                 mov     byte[fechaEsValida],"S"
                 finValidarDia:
                     ret
@@ -382,7 +388,7 @@ mostrarConversiones:
 ;Rutina para validar un fecha en formato gregoriano
 validarFechaGeneral:
 
-            [fechaEsValida],"N"
+            ;[fechaEsValida],"N"
 
             ;___validar anio___
             call        validarAnio
@@ -397,14 +403,15 @@ validarFechaGeneral:
 
             ;___validar dia___
             call        validarDia
-            cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
-            je		    finvalidarFechaGeneral
+            ;cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
+            ;je		    finvalidarFechaGeneral
 
-            validarFechaGeneral:
+            finvalidarFechaGeneral:
             
                 ret
 
             validarAnio:
+                mov         [fechaEsValida],"N"
                 ;entre 1950 y 2049
                 
                 ;jg
@@ -414,12 +421,14 @@ validarFechaGeneral:
             
             validarMes: ;mes entre 1 y 12 y guarda la pos del mes en posMes
                 ;[posMes]
-                
+                mov         [fechaEsValida],"N"
+                ;
                 mov     byte[fechaEsValida],"S"
                 finValidarMes:
                     ret
             
             validarDia: 
+                mov         [fechaEsValida],"N"
                 ;pregunto si el dia esta en el rango
                 ; del numero de dias de posMes es
                 ;mov     ebx,posMes
