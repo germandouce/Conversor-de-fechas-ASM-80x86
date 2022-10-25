@@ -25,14 +25,14 @@ section     .data
     debug                     db  "debug",10,0
 
     ;____ msjs ingresos usuario ___
-    msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (g-gregoriano r-romano j-juliano)",10,0
+    msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
     
     msjIngFechaFormatoGrego   db  "Ingrese una fecha en formato gregoriano (DD/MM/AAAA)",10,0
     msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD/MM/AAAA)",10,0
     msjIngFechaFormatoJul     db  "Ingrese una fecha en formato Juliano (DDD/AA)",10,0
 
     ;___ formatos de ingreso ___
-    FormatoCaracterIndicFecha db  "%s"
+    formatoCaracterIndicFecha db  "%hi"
     
     formatoIngFechaGrego      db "%hi %hi %hi",0 ;hi (16 bits, 2 bytes 1 word)
     formatoIngFechaRom        db "%s %s %s",0 ;%s string
@@ -66,10 +66,12 @@ section     .bss
     ;indicadores de validez
     esValido                    resb    1 ;'S' - Si 'N'- No
     fechaEsValida               resb    1 ;'S' - Si 'N'- No
+    esBisiesto                  resb    1
 
     ;caracter indicador de fecha
     ;deberia lllamarse string o algo asi
-    ingCaracterFormatoFecha     resb    1
+    strCaracterFormatoFecha     resb    50
+    caracterFormatoFecha        resb    1
 
 
 section     .text
@@ -96,7 +98,7 @@ ingresoFormatoFecha:
     add             rsp,32
 
     ;pido caracter indicador de formato de fechs
-    mov             rcx,ingCaracterFormatoFecha
+    mov             rcx,strCaracterFormatoFecha
     sub             rsp,32
     call            gets ;solo lee lo ingresado como texto. No castea nada
     add             rsp,32
@@ -110,29 +112,38 @@ ingresoFormatoFecha:
 
     validarCaracterFecha:   
 
-        ;mov             byte[inputValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
+        mov             byte[esValido], "N"; Le coloco un no a la var. es como un false antes del ciclo
         ; guardo y leo caracter "casteo? esta al pedo esto #DUDA"
-        mov             rcx,ingCaracterFormatoFecha; tomado el ingreso por teclado fuere cual fuere
-        mov             rdx,FormatoCaracterIndicFecha ; formatea el ingreso como lo escribi
+        mov             rcx,strCaracterFormatoFecha; tomado el ingreso por teclado fuere cual fuere
+        mov             rdx,formatoCaracterIndicFecha ; formatea el ingreso como lo escribi
         mov             r8, caracterFormatoFecha ;xa guardar el valor del caracter
         sub             rsp,32
         call            sscanf
         add             rsp,32
 
-        ;FALTA LA VAILDACION por tabla g r O J
-    
-        ret
+        cmp             rax,1
+        jne             finValidarCaracterFecha
+
+        cmp		word[caracterFormatoFecha],1
+	    jl		finValidarCaracterFecha
+	    cmp		word[caracterFormatoFecha],3
+	    jg		finValidarCaracterFecha
+
+
+        mov             byte[esValido], "S"
+        finValidarCaracterFecha:
+            ret
 
 
 ingresoFecha:   
 
-    cmp             word[caracterFormatoFecha], "g" ;gregoriano
+    cmp             word[caracterFormatoFecha], 1 ;gregoriano
     je              ingFechaGrego
 
-    cmp             word[caracterFormatoFecha], "r" ;romano
+    cmp             word[caracterFormatoFecha], 2 ;romano
     je              ingFechaRom
 
-    cmp             word[caracterFormatoFecha], "j" ;juliano
+    cmp             word[caracterFormatoFecha], 3 ;juliano
     je              ingFechaJul
 
     ;_______________________Ingreso Fecha Gregoriana ____________________________
@@ -150,13 +161,13 @@ ingresoFecha:
         ;add             rsp,32
 
         call             validarFechaGrego ;(Valida q sean 3 parametrs )
-        cmp              [fechaEsValida],"N"
+        cmp              byte[fechaEsValida],"N"
         je               ingFechaGrego
 
         call             validarFechaGeneral 
         ;(Valida anios bissietso, fecha 
         ;existe etc)
-        cmp              [fechaEsValida],"N"
+        cmp              byte[fechaEsValida],"N"
         je               ingFechaGrego
 
         ;si la fecha es valida hago los pasajes necesarios
@@ -167,7 +178,7 @@ ingresoFecha:
         jmp              finIngresoFecha
         
         validarFechaGrego:
-            mov         [fechaEsValida],"N"        
+            mov         byte[fechaEsValida],"N"        
             ;asumo no valida y pregunto....
             ; mov		rcx,inputFilCol
             ; mov		rdx,formatInputFilCol
@@ -181,7 +192,7 @@ ingresoFecha:
             ; jl		finValidarFechaGrego
             
             ;si llegue hasta aca es valida       
-            mov         [fechaEsValida],"S" 
+            mov         byte[fechaEsValida],"S" 
             finValidarFechaGrego: 
                 ret
     
@@ -200,7 +211,7 @@ ingresoFecha:
         ;add             rsp,32
 
         call            validarFechaRom ;   valido q sean 3 parametros y q sean letras
-        cmp             [fechaEsValida],"N"
+        cmp             byte[fechaEsValida],"N"
         je              ingFechaRom
 
         call            convertirRomAGrego
@@ -208,7 +219,8 @@ ingresoFecha:
         ;luego valido con la rutina para ese tipo de fechas
         ;q la fecha exista, los anios esten en el rango valido etc
         call            validarFechaGeneral
-        cmp             [fechaEsValida],"N"
+        cmp             byte[fechaEsValida],"N"
+        je              ingFechaRom
 
         ;como ingreso en Rom y ya pase a Grego para validar, 
         ;solo me queda pasar a Juliano,
@@ -235,46 +247,46 @@ ingresoFecha:
             ; jl		finValidarFechaRom
 
             ;___validar anio___
-            call        validarAnio
+            call        validarAnioRom
             cmp		    byte[fechaEsValida],"N" ;Letras son correctas
             je		    finValidarFechaRom
                         
             ;___validar mes___ 
-            call        validarMes   ;Letras con correctas
+            call        validarMesRom   ;Letras con correctas
             cmp		    byte[fechaEsValida],"N"	
             je		    finValidarFechaRom
 
             ;___validar dia___
-            call        validarDia ;letras son correctas 
-            ;cmp		    byte[fechaEsValida],"N"	
+            call        validarDiaRom ;letras son correctas 
+            ;cmp		byte[fechaEsValida],"N"	
             ;je		    finValidarFechaRom
 
             finValidarFechaRom:
             
                 ret
 
-            validarAnio:
-                mov         [fechaEsValida],"N"
+            validarAnioRom:
+                mov         byte[fechaEsValida],"N"
                 ;Valido letras con tabla
                 ;jg
                 
                 mov     byte[fechaEsValida],"S"    
-                finValidarAnio:
+                finValidarAnioRom:
                     ret
             
-            validarMes: 
-                mov         [fechaEsValida],"N"
+            validarMesRom: 
+                mov         byte[fechaEsValida],"N"
                 ;valido letras con tabla
                 
                 mov     byte[fechaEsValida],"S"
-                finValidarMes:
+                finValidarMesRom:
                     ret
             
-            validarDia:
-                mov         [fechaEsValida],"N" 
+            validarDiaRom:
+                mov         byte[fechaEsValida],"N" 
                 ;valido letras con tablas
                 mov     byte[fechaEsValida],"S"
-                finValidarDia:
+                finValidarDiaRom:
                     ret
 
     ;_____________________Ingreso Fecha Juliana ____________________________
@@ -293,7 +305,7 @@ ingresoFecha:
         ;add             rsp,32
 
         call            validarFechaJul ;   valido q sean 2 parametros y q los numeros sean validos
-        cmp             [fechaEsValida],"N"
+        cmp             byte[fechaEsValida],"N"
         je              ingFechaJul
 
 
@@ -320,40 +332,40 @@ ingresoFecha:
             ; add		rsp,32
 
             ; cmp		rax,2
-            ; jl		finValidarFechaRom
+            ; jl		finValidarFechaJul
 
             ;___validar anio___
-            call        validarAnio
+            call        validarAnioJul
             cmp		    byte[fechaEsValida],"N" ; 50 a 49
-            je		    finValidarFechaRom
+            je		    finValidarFechaJul
 
             ;___validar dia___
-            call        validarDia ;1 a 365
+            call        validarDiaJul ;1 a 365
             ;cmp		    byte[fechaEsValida],"N"	
             ;je		    finValidarFechaRom
 
-            finValidarFechaRom:
+            finValidarFechaJul:
             
                 ret
 
-            validarAnio:
-                mov         [fechaEsValida],"N"
+            validarAnioJul:
+                mov        byte[fechaEsValida],"N"
                 ;Valido anio de 50 a 49
                 ;jg
                 
                 mov     byte[fechaEsValida],"S"    
-                finValidarAnio:
+                finValidarAnioJul:
                     ret
             
-            validarDia: 
-                mov         [fechaEsValida],"N"
+            validarDiaJul: 
+                mov         byte[fechaEsValida],"N"
                 ;valido dia de 1 a 365
                 
                 mov     byte[fechaEsValida],"S"
-                finValidarDia:
+                finValidarDiaJul:
                     ret
     
-    finIngFecha:
+    finIngresoFecha:
         
         mov             rcx, debug
         sub             rsp,32
@@ -391,18 +403,18 @@ validarFechaGeneral:
             ;[fechaEsValida],"N"
 
             ;___validar anio___
-            call        validarAnio
+            call        validarAnioGrego
             cmp		    byte[fechaEsValida],"N" ;esta entre 1950 y 2049 ?
             je		    finvalidarFechaGeneral
                         
             ;___validar mes___ 
             ;esta entre 1 y 31
-            call        validarMes   ;guarda la pos en el vector de meses para porx validacion     
+            call        validarMesGrego   ;guarda la pos en el vector de meses para porx validacion     
             cmp		    byte[fechaEsValida],"N"	
             je		    finvalidarFechaGeneral
 
             ;___validar dia___
-            call        validarDia
+            call        validarDiaGrego
             ;cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
             ;je		    finvalidarFechaGeneral
 
@@ -410,37 +422,37 @@ validarFechaGeneral:
             
                 ret
 
-            validarAnio:
-                mov         [fechaEsValida],"N"
+            validarAnioGrego:
+                mov         byte[fechaEsValida],"N"
                 ;entre 1950 y 2049
                 
                 ;jg
                 mov     byte[fechaEsValida],"S"    
-                finValidarAnio:
+                finValidarAnioGrego:
                     ret
             
-            validarMes: ;mes entre 1 y 12 y guarda la pos del mes en posMes
+            validarMesGrego: ;mes entre 1 y 12 y guarda la pos del mes en posMes
                 ;[posMes]
-                mov         [fechaEsValida],"N"
+                mov     byte[fechaEsValida],"N"
                 ;
                 mov     byte[fechaEsValida],"S"
-                finValidarMes:
+                finValidarMesGrego:
                     ret
             
-            validarDia: 
-                mov         [fechaEsValida],"N"
+            validarDiaGrego: 
+                mov         byte[fechaEsValida],"N"
                 ;pregunto si el dia esta en el rango
                 ; del numero de dias de posMes es
                 ;mov     ebx,posMes
                 ;pregunto si el anio es bisiesto
                 ;call     anioBisiesto
                 ;cmp		  byte[esBisiesto],"S"
-                je        diaAnioBisiesto            
+                je           diaAnioBisiesto            
 
+                ;si no es bisisteo
                 ;mov     al,[diasMeses + ebx]  
                 ;con dias no bisisestos va a saltar si es 29 de feb xq tengo un 28
                 jmp     diaEnRango
-                ret
                 
                 diaAnioBisiesto:
                 ;mov     al,[diasMesesBisiesto + ebx]  
@@ -453,7 +465,7 @@ validarFechaGeneral:
                     ;y mayor a 0
                 
                 mov     byte[fechaEsValida],"S"
-                finValidarDia:
+                finValidarDiaGrego:
                     ret
 
 
