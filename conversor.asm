@@ -22,9 +22,9 @@ extern gets
 
 section     .data
 
-    debug                     db  "debug",10,10,0
+    debug                       db  "debug",10,10,0
     debugConints                db "debug %hi %hi %hi",10,0
-    formatoNum                  db " este es el numero: %hi",10,0
+    formatoNum                  db " este es el numero: %hi %hi",10,0
 
     ;____ msjs ingresos usuario con formatos ___
     msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
@@ -49,6 +49,17 @@ section     .data
     ;___Mensajes de error ___
     espacio                     db  "",10
     msjErrorValidarFechaGeneral db  "LA FECHA INGRESADA NO ES VALIDA.",10,10,0
+    alertaAnioBisiesto          db  "El anio ingresado ES BISIESTO",10,0
+    alertaAnioNoBisiesto        db  "El anio ingresado NO es bisiesto",10,0
+
+    ;__vectores__
+    vecDiasMeses                dw  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    vecDiasMesesBisiestos       dw  31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    ;#DUDA es posible iterarlos si no son de  16 bits?
+
+    ;___
+    desplaz                         dw  0
+    aux                             dw  0
 
 section     .bss
     
@@ -444,48 +455,71 @@ validarFechaGeneral:
                 ;entre 1950 y 2049
                 mov         byte[fechaEsValida],"N"
                 
+                ;si lo hago mas mejor, valido contra un regitstro al q le mdeto anio max
+                ;mov        r10,word[AnioLimiteSup]
+                ;cmp        word[anioGrego],r10
+                ;cmp        r10,word[anioGrego] ;OJO CAMBIAR EL JUmp por jl
                 cmp         word[anioGrego],2050
                 jge         finValidarAnioGrego
                 
                 cmp         word[anioGrego],1949
                 jle         finValidarAnioGrego
                 
-                mov     byte[fechaEsValida],"S"    
+                mov         byte[fechaEsValida],"S"    
                 finValidarAnioGrego:
                     ret
             
-            validarMesGrego: ;mes entre 1 y 12 y guarda la pos del mes en posMes
-                ;[posMes]
+            validarMesGrego: ;mes entre 1 y 12
                 mov     byte[fechaEsValida],"N"
-                ;
-                mov     byte[fechaEsValida],"S"
+                
+                cmp         word[mesGrego],12
+                jg          finValidarMesGrego
+                
+                cmp         word[mesGrego],1
+                jl          finValidarMesGrego
+
+                mov         byte[fechaEsValida],"S"
                 finValidarMesGrego:
                     ret
             
             validarDiaGrego: 
                 mov         byte[fechaEsValida],"N"
                 ;pregunto si el dia esta en el rango
-                ; del numero de dias de posMes es
-                ;mov     ebx,posMes
-                ;pregunto si el anio es bisiesto
-                ;call     anioBisiesto
-                ;cmp		  byte[esBisiesto],"S"
-                je           diaAnioBisiesto            
+                ;del numero de dias de posMes es
+                cmp         word[diaGrego],0
+                jle          finValidarDiaGrego; si menor a 0 ya corto la validacion
 
-                ;si no es bisisteo
-                ;mov     al,[diasMeses + ebx]  
-                ;con dias no bisisestos va a saltar si es 29 de feb xq tengo un 28
-                jmp     diaEnRango
+                ;es menor a 29 29 30 31..?
+                ;[(columna -1) *(longElemento)]
+                mov         ebx,0 ;relleno con 0 por las dudas para iterar
+                mov         bx,word[mesGrego] ;ebx = mesGrego
+                dec         bx         ;(columna -1) mesGregi -1 para pos en vector
+                imul        bx,bx,2 ;(columna -1) *(longElemento)es un vector de words, 2 bytes c/u
+                mov         word[desplaz],bx ;desplaz = pos en vector de meses
+
+                ;pregunto si el anio es bisiesto
+                call        anioBisiesto 
+                ;esta rutina usa el bx, por eso tengo q reptir abajo... 
+                mov     bx,word[desplaz]
+                mov     rcx,2                       ;1) bytes de beneficio
+                lea     rsi,[diaGrego]
+                
+                cmp		    byte[esBisiesto],"S"
+                    je          diaAnioBisiesto            
+            
+                    lea     rdi,[vecDiasMeses + ebx]   ;3) #tabla de dias destino -> rdi
+                                
+                    jmp         diaEnRango
                 
                 diaAnioBisiesto:
-                ;mov     al,[diasMesesBisiesto + ebx]  
-                ;con dias bisisestos puede estar hasta el 29
+                
+                    lea     rdi,[vecDiasMesesBisiestos + ebx]
+                    
 
                 diaEnRango: ;pregunto si el dia esta en el rango
-                    ;cmp    [dia],al
-                    ;jle
-                    ;bla bla
-                    ;y mayor a 0
+
+                repe        cmpsb                              
+                jg          finValidarDiaGrego 
                 
                 mov     byte[fechaEsValida],"S"
                 finValidarDiaGrego:
@@ -529,9 +563,54 @@ convertirJulAGrego:
 
 ;chequea si un año es bisiesto y coloca en la var esBisiesto "S" o "N" 
 anioBisiesto:
-    
-    mov     byte[esBisiesto],"S"
-    ret
+    mov 	ax,word[anioGrego]	;AX = ANIO      	
+	sub 	dx,dx				;Limpio DX para dejar el resto
+    mov 	BX, 400		;BX = 400
+	div		BX	;Realiza la operacion AX/BX = ANIO/400 DX = resto
+    cmp 	dx, 0
+	je 		marcarBisiesto
+	;si es divisible por 400 esBisiesto
+	;sino sigo mirando
+	NodivisiblePorCuatrocientosMiroPorCuatro:
+		Mov 	ax, word[anioGrego]	;AX = ANIO				
+        sub 	dx,dx						;Reinicializa el registro DX
+        mov 	bx, 4 ;BX = 4
+		div 	bx	; AX/BX = ANIO/ 4 DX = RESTO						        ;Hace la division AX/0004h
+        cmp 	dx, 0
+		jne 	marcarNoEsBisiesto						        
+		;(no es divisible ni por 400 ni por 4 noEsBisiesto)
+		;(no es divisible por 400, pero si por 4, Sigo mirando) 	
+        
+        NoDivisiblePorCuatrocientosSiPorCuatroMiroPorCien:
+            ;Mov DX, 0000h	                          ;Reinicializa el registro DX
+            sub 	dx,dx
+            mov 	AX, word[anioGrego]
+            mov 	bx,100	;BX = 100
+            Div 	BX ; AX/BX = ANIO/100 DX = RESTO
+            cmp 	dx, 0 
+            je 		marcarNoEsBisiesto						       
+            ;(no es divisible por 400, pero si por 4 y 100 entonces no es bisiesto)
+            ;(no es divisible por 400, no es divisible por 400 pero si es divisible por 4 siEsBisiesto)
+        marcarBisiesto:
+            mov word[esBisiesto], "S"		
+            
+            mov		rcx,alertaAnioBisiesto
+            sub		rsp,32
+            call	printf
+            add		rsp,32
+            
+            jmp     finAnioBisiesto							
+
+    marcarNoEsBisiesto:
+        mov word[esBisiesto], "N"		
+        
+        mov		rcx,alertaAnioNoBisiesto
+        sub		rsp,32
+        call	printf
+        add		rsp,32
+
+    finAnioBisiesto:
+        ret
 ;---------------------------------------------------------------------
 
 
