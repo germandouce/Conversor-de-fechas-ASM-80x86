@@ -23,6 +23,11 @@ extern gets
 section     .data
 
     debug                       db  "debug",10,10,0
+    tiene                       db  "tiene espacio",10,10,0
+    
+    debugConChar                db "este es el char: %s",10,0
+    formatoChar                 db "%s",10,0
+    debugConInt                db  "esta es el numero %hi",10,0
     debugConints                db "debug %hi %hi %hi",10,0
     formatoNum                  db " este es el numero: %hi %hi",10,0
 
@@ -55,6 +60,20 @@ section     .data
     ;__vectores__
     vecDiasMeses                dw  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
     vecDiasMesesBisiestos       dw  31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+
+    vecSimbolosRomanos          db  "M ",0
+                                db  "CM",0
+                                db  "D ",0
+                                db  "CD",0
+                                db  "C ",0
+
+    ;vecOrigin                   db  "1234",0
+
+    vecValoresRomanos           dw  1000, 900, 500, 400,100, 90, 50, 40,10, 9, 5, 4, 1
+    
+    ;tamVecDestiny               dw  0
+    tamNumeroRomanoArmado       dw  0
+
     ;#DUDA es posible iterarlos si no son de  16 bits?
 
     ;___
@@ -63,7 +82,12 @@ section     .data
 
 section     .bss
     
-    
+    ;___auxiliares__
+    contadorRcx                 resq    1
+    simboloRomano               resw    1
+    numeroRomanoArmado          resb    100
+    vecDestiny                  resb    100    
+
     ;gregoriano DD/MM/AAAA
     strInputFechaGrego          resb    100 ;
     diaGrego                    resw    1 ; 2bytes 2049
@@ -95,6 +119,7 @@ section     .bss
 section     .text
 
 main:
+    mov rbp, rsp; for correct debugging
 
     call            ingresoFormatoFecha
     
@@ -179,7 +204,7 @@ ingresoFecha:
 
         je              ingFechaGrego 
 
-        call             validarFechaGeneral 
+        call            validarFechaGeneral 
         ;(Valida anios bissietso, fecha 
         ;existe etc)
         cmp              byte[fechaEsValida],"N"
@@ -187,8 +212,9 @@ ingresoFecha:
 
         ;si la fecha es valida hago los pasajes necesarios
 
-        ;call            convertirGregoAJul
-        ;call            convertirGregoARom
+        call              convertirGregoARom
+        ;call             convertirGregoAJul
+        
 
         jmp              finIngresoFecha
         
@@ -487,7 +513,7 @@ validarFechaGeneral:
                 ;pregunto si el dia esta en el rango
                 ;del numero de dias de posMes es
                 cmp         word[diaGrego],0
-                jle          finValidarDiaGrego; si menor a 0 ya corto la validacion
+                jle         finValidarDiaGrego; si menor a 0 ya corto la validacion
 
                 ;es menor a 29 29 30 31..?
                 ;[(columna -1) *(longElemento)]
@@ -500,24 +526,29 @@ validarFechaGeneral:
                 ;pregunto si el anio es bisiesto
                 call        anioBisiesto 
                 ;esta rutina usa el bx, por eso tengo q reptir abajo... 
-                mov     bx,word[desplaz]
-                mov     rcx,2                       ;1) bytes de beneficio
-                lea     rsi,[diaGrego]
+                mov         bx,word[desplaz]
+                mov         rcx,2                       ;1) bytes a comparar
+                lea         rsi,[diaGrego]  
                 
-                cmp		    byte[esBisiesto],"S"
+
+                ;2) RSI = DIA GREGO
+                
+                cmp		        byte[esBisiesto],"S"
                     je          diaAnioBisiesto            
             
-                    lea     rdi,[vecDiasMeses + ebx]   ;3) #tabla de dias destino -> rdi
+                    lea         rdi,[vecDiasMeses + ebx]   
+                    ;3) tabla de dias destino -> rdi
                                 
                     jmp         diaEnRango
                 
                 diaAnioBisiesto:
                 
-                    lea     rdi,[vecDiasMesesBisiestos + ebx]
+                    lea         rdi,[vecDiasMesesBisiestos + ebx] 
+                    ;3) tabla de dias destino -> rdi
                     
 
                 diaEnRango: ;pregunto si el dia esta en el rango
-
+                
                 repe        cmpsb                              
                 jg          finValidarDiaGrego 
                 
@@ -532,7 +563,126 @@ validarFechaGeneral:
 ;a
 ;FORMATO ROMANO en diaRom - mesRom  - anioRom
 convertirGregoARom:
+ 
+    mov     rcx,5
+    mov     ebx,0
+    ;mov     eax,0
+    mov      word[tamNumeroRomanoArmado],0
+
+    sigSimbolo:
+        
+        push rcx
+
+        mov     rcx,2  ;supongo no tiene espacio y copiare los 2 simbolos
+        
+        mov     rdx,0 
+        add     dx,2    ;DX =TamAAgrandar numero romano
+
+        cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
+
+        jne      noTieneEspacio    
+
+            ;si tiene espacio es q hay un solo simbolo Romano,
+            mov     rcx,1       ;bytes a copiar
+            mov     rdx,0       ;DX =TamAAgrandar numero romano
+            add     dx,1
+
+
+        noTieneEspacio:
+        
+        
+        LEA RSI,[vecSimbolosRomanos + ebx]  ;ebx = 3  
+
+            
+
+        ;sub r10,r10
+        mov rax,0
+        mov ax,word[tamNumeroRomanoArmado]    ;r10 para moverme en numeroRomanoArmado
+
+        cwde    ;muy importante... 
+
+        LEA RDI,[numeroRomanoArmado + eax]       
+
+        REP MOVSB    
+
+
+        ;______DEJAR ESTE DEBUG ALGO CORRE Y NO ROMPE____
+        push rcx
+        push  rdx
+        call    imprimirNumero
+        pop  rdx
+        pop rcx
+        ;_______Debug______
+
+        add      ebx,3   ;3 bytes = 2  bytes letras + 0   
+        
+        add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
+
+
+        pop rcx
+
+    loop    sigSimbolo
+
+    call    imprimirNumeroBien
+
     ret
+
+unDebug:
+
+    mov             rcx,debug
+    sub             rsp,32
+    call            printf
+    add             rsp,32
+
+    ret
+
+unDebugConInt:
+
+    ;mov             word[aux],r9w
+    
+    mov            rcx,debugConInt
+    mov            rdx,rax
+    sub            rsp,32
+    call            printf
+    add             rsp,32
+
+    ret
+
+otroDebugConInt:
+
+    mov             word[aux],r9w
+    
+    mov            rcx,debugConInt
+    mov            rdx,[aux]
+    sub            rsp,32
+    call            printf
+    add             rsp,32
+
+    ret
+
+imprimirNumero:
+    mov     rcx,numeroRomanoArmado
+    sub		rsp,32
+    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
+    add		rsp,32
+    
+    ret
+
+imprimirNumeroBien:
+    
+    mov     rcx,debug
+    sub		rsp,32
+    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
+    add		rsp,32
+
+    mov     rcx,numeroRomanoArmado
+    sub		rsp,32
+    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
+    add		rsp,32
+    
+    ret
+
+
 
 
 ;--------------------------------------------------------------------------------
@@ -541,6 +691,7 @@ convertirGregoARom:
 ;a
 ;FOMRATO JULIANO en diaJul - mesJul  - anioJul
 convertirGregoAJul:
+    
     ret
 
 
