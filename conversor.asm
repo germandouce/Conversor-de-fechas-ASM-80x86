@@ -89,6 +89,7 @@ section     .data
     ;___
     desplaz                         dw  0
     aux                             dw  0
+    diaAux                          dw  0
 
 section     .bss
     
@@ -577,67 +578,88 @@ convertirGregoARom:
     ;bytesSimbolos = BytesNuemeros + posEnVcetores    
     sub rdx,rdx ;ya que el cociente se deposita en RDX:RAX, entonces hay que dejar el rdx vacio
     
-    mov     ebx,22   ;contador en vector simbolos romanos
+    ;mov     ebx,22   ;contador en vector simbolos romanos
 
-    mov      r9w,word[diaGrego]   ;AX = numero (4 bytes)
+    ;OJOOOOOO
+    mov      r9w,[anioGrego]   ;r9w = numeroAux (4 bytes)    #OJOOOOO
     mov      word[tamNumeroRomanoArmado],0
     ;por unica vez,
     
-    mov     word[posEnVectoresRomanos],11 ;pongo en cero0
-    ;#OJO CAMPBIAARRR
+    mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
 
-    ;r9w = numAuxiliar
-    mov     ax,r9w   ;AX = numero (4 bytes)
-    
-    sub     ebx,ebx ;#quito basura por las dudas
+    sigDivision:
+    sub     rdx,rdx ;IMPORTANTISIMOOOOO
+
+    sub     rbx,rbx ;#quito basura por las dudas
     mov     ebx,dword[posEnVectoresRomanos]
     
     imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
     mov     r10w,[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
 
-    idiv    r10w    ;cociente = AX = numero de veces a colocar ese simbolo
+    ;r9w = numAuxiliar
+    sub     ax,ax   ;#basura
+    mov     ax,r9w   ;AX = r9w = numeroAux dsps de restarle simbolo anterior 
+
+    ;quitar lo de aca abajo
+    ;mov     r10w,500
+    ;mov     cx,500
     
-    mov     cx,ax ;cx = AX = veces a concatenar el simbolo
-       
-    proxSimbolo:
+    idiv    r10w     ;AX = AX/R10W 
+    ;idiv    cx     ;AX = AX/R10W 
+    ;cociente = AX = numero de veces a colocar ese simbolo
+    ;sub     rcx,rcx
+    ;mov     cx,ax ;CX = AX = veces a concatenar el simbolo
+    ;ocurre que si el numero es pequenio, las primeras diviones dan 0. 
+    ;chequeo eso
+    ;cwde
+    ;cdqe
+    cmp     ax,0    
+    je      sigSimbolo
+    
+    mov     cx,ax   ;si resultado de la divi es mayor a 0 entro
+    ;sino, es q la divion dio mayor a 0, y el simbolo se debe ocncatenar al menos 1 vez 
+    repeSimbolo:
+        
         ;push rcx ;para no perder el valor del rcx en el loop
         push rcx
         call    concatenarSimbolo   ;
         pop rcx
 
         ;mov     rax,0   ;#dejo  0 en rax
-        push rcx
-        mov            rcx,debugConInt
-        mov            rdx,[tamNumeroRomanoArmado]
-        sub            rsp,32
-        call            printf
-        add             rsp,32
-        pop rcx
-        
+    
         ;push rcx
         ;call       imprimirNumeroBien    
         ;pop rcx
 
         sub     r9w,r10w ;numAuxliar - Simbolo
-
+        ;ret
         ;pop rcx
 
-    loop  proxSimbolo
+    loop  repeSimbolo
 
     ;cuando termine con ese simbolo 
     ;(itere tantas veces como res de la division)
     ;ya reste el simbolo a AX, pregunto si e queda algo
     
     ;mov            word[aux_reg],rax
-    mov            rcx,debugConInt
-    mov            rdx,r9
-    sub            rsp,32
-    call            printf
-    add             rsp,32
+    ; mov            rcx,debugConInt
+    ; mov            rdx,r9
+    ; sub            rsp,32
+    ; call            printf
+    ; add             rsp,32
 
     ;add     ebx,2       ;EBX = POS en vector simbolos romanos
 
-    inc          word[posEnVectoresRomanos]
+    sigSimbolo:
+        inc         dword[posEnVectoresRomanos]
+
+        cmp         r9w,0 ;numAuxliar
+        jg          sigDivision
+
+    push rcx
+    call    imprimirNumeroBien
+    pop rcx
+    ;si es mayo a 0 voy a la sig division
     
     ;call    unDebugConInt
     ;
@@ -689,20 +711,17 @@ concatenarSimbolo:
     REP MOVSB    
 
     ;______DEJAR ESTE DEBUG ALGO CORRE Y NO ROMPE____
-    push rcx
-    push  rdx
-    call    imprimirNumero
-    pop  rdx
-    pop rcx
+    ;push rcx
+    ;push  rdx
+    ;call    imprimirNumero
+    ;pop  rdx
+    ;pop rcx
     ;_______Debug______
 
     ;add      ebx,3   ;3 bytes = 2  bytes letras + 0   
     
     add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
-    ;push rcx
-    ;call    imprimirNumeroBien
-    ;pop rcx
-
+    
     ;call    unDebug
 
     ret
