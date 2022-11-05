@@ -27,7 +27,7 @@ section     .data
     
     debugConChar                db "este es el char: %s",10,0
     formatoChar                 db "%s",10,0
-    debugConInt                db  "esta es el numero %hi",10,0
+    debugConInt                db  "esta es el numero %hi",10,10,0
     debugConints                db "debug %hi %hi %hi",10,0
     formatoNum                  db " este es el numero: %hi %hi",10,0
 
@@ -61,16 +61,26 @@ section     .data
     vecDiasMeses                dw  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
     vecDiasMesesBisiestos       dw  31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 
-    vecSimbolosRomanos          db  "M ",0
+    vecSimbolosRomanos          db  "M ",0 
                                 db  "CM",0
                                 db  "D ",0
                                 db  "CD",0
                                 db  "C ",0
+                                db  "XC",0
+                                db  "L ",0
+                                db  "XL",0
+                                db  "X ",0
+                                db  "IX",0
+                                db  "V ",0
+                                db  "IV",0
+                                db  "I ",0
 
     ;vecOrigin                   db  "1234",0
 
     vecValoresRomanos           dw  1000, 900, 500, 400,100, 90, 50, 40,10, 9, 5, 4, 1
     
+    posEnVectoresRomanos        dd  0   ;para facilitar cuentas al moverme en vectores
+
     ;tamVecDestiny               dw  0
     tamNumeroRomanoArmado       dw  0
 
@@ -83,6 +93,7 @@ section     .data
 section     .bss
     
     ;___auxiliares__
+    aux_reg                     resw    1
     contadorRcx                 resq    1
     simboloRomano               resw    1
     numeroRomanoArmado          resb    100
@@ -563,69 +574,140 @@ validarFechaGeneral:
 ;a
 ;FORMATO ROMANO en diaRom - mesRom  - anioRom
 convertirGregoARom:
- 
-    mov     rcx,5
-    mov     ebx,0
-    ;mov     eax,0
+    ;bytesSimbolos = BytesNuemeros + posEnVcetores    
+    sub rdx,rdx ;ya que el cociente se deposita en RDX:RAX, entonces hay que dejar el rdx vacio
+    
+    mov     ebx,22   ;contador en vector simbolos romanos
+
+    mov      r9w,word[diaGrego]   ;AX = numero (4 bytes)
     mov      word[tamNumeroRomanoArmado],0
+    ;por unica vez,
+    
+    mov     word[posEnVectoresRomanos],11 ;pongo en cero0
+    ;#OJO CAMPBIAARRR
 
-    sigSimbolo:
-        
+    ;r9w = numAuxiliar
+    mov     ax,r9w   ;AX = numero (4 bytes)
+    
+    sub     ebx,ebx ;#quito basura por las dudas
+    mov     ebx,dword[posEnVectoresRomanos]
+    
+    imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
+    mov     r10w,[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
+
+    idiv    r10w    ;cociente = AX = numero de veces a colocar ese simbolo
+    
+    mov     cx,ax ;cx = AX = veces a concatenar el simbolo
+       
+    proxSimbolo:
+        ;push rcx ;para no perder el valor del rcx en el loop
         push rcx
-
-        mov     rcx,2  ;supongo no tiene espacio y copiare los 2 simbolos
-        
-        mov     rdx,0 
-        add     dx,2    ;DX =TamAAgrandar numero romano
-
-        cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
-
-        jne      noTieneEspacio    
-
-            ;si tiene espacio es q hay un solo simbolo Romano,
-            mov     rcx,1       ;bytes a copiar
-            mov     rdx,0       ;DX =TamAAgrandar numero romano
-            add     dx,1
-
-
-        noTieneEspacio:
-        
-        
-        LEA RSI,[vecSimbolosRomanos + ebx]  ;ebx = 3  
-
-            
-
-        ;sub r10,r10
-        mov rax,0
-        mov ax,word[tamNumeroRomanoArmado]    ;r10 para moverme en numeroRomanoArmado
-
-        cwde    ;muy importante... 
-
-        LEA RDI,[numeroRomanoArmado + eax]       
-
-        REP MOVSB    
-
-
-        ;______DEJAR ESTE DEBUG ALGO CORRE Y NO ROMPE____
-        push rcx
-        push  rdx
-        call    imprimirNumero
-        pop  rdx
-        pop rcx
-        ;_______Debug______
-
-        add      ebx,3   ;3 bytes = 2  bytes letras + 0   
-        
-        add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
-
-
+        call    concatenarSimbolo   ;
         pop rcx
 
-    loop    sigSimbolo
+        ;mov     rax,0   ;#dejo  0 en rax
+        push rcx
+        mov            rcx,debugConInt
+        mov            rdx,[tamNumeroRomanoArmado]
+        sub            rsp,32
+        call            printf
+        add             rsp,32
+        pop rcx
+        
+        ;push rcx
+        ;call       imprimirNumeroBien    
+        ;pop rcx
 
-    call    imprimirNumeroBien
+        sub     r9w,r10w ;numAuxliar - Simbolo
+
+        ;pop rcx
+
+    loop  proxSimbolo
+
+    ;cuando termine con ese simbolo 
+    ;(itere tantas veces como res de la division)
+    ;ya reste el simbolo a AX, pregunto si e queda algo
+    
+    ;mov            word[aux_reg],rax
+    mov            rcx,debugConInt
+    mov            rdx,r9
+    sub            rsp,32
+    call            printf
+    add             rsp,32
+
+    ;add     ebx,2       ;EBX = POS en vector simbolos romanos
+
+    inc          word[posEnVectoresRomanos]
+    
+    ;call    unDebugConInt
+    ;
+    ;mov qword[resultado],rax
+
+    ;mov rdi,mensaje_resul
+    ;mov rsi,qword[resultado]
+
+    ;sub rax,rax
+    ;call printf
+
+    ;rcx = diaGrego
 
     ret
+
+concatenarSimbolo:
+    mov     rcx,2  ;supongo no tiene espacio y copiare los 2 simbolos
+    
+    mov     rdx,0   ;#
+    add     dx,2    ;DX =TamAAgrandar numero romano
+
+    ;EBX = Bytes en vecSimbolosRomanos 
+    ;Aca, en vecSimbolosRomanos c/"elemento" son 3 bytes entonces
+    ;multiplico *3
+    sub     ebx,ebx ;#quito basura por las dudas
+    mov     ebx,dword[posEnVectoresRomanos]
+    imul    ebx,3
+    cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
+
+    jne      noTieneEspacio    
+
+        ;si tiene espacio es q hay un solo simbolo Romano,
+        mov     rcx,1       ;bytes a copiar
+        mov     rdx,0       ;DX =TamAAgrandar numero romano
+        add     dx,1        ;DX =TamAAgrandar numero romano
+
+
+    noTieneEspacio:
+    
+    LEA RSI,[vecSimbolosRomanos + ebx] 
+
+    mov rax,0
+    mov ax,word[tamNumeroRomanoArmado]  ;#NOOOOOOOOOOOOOO: r10 para moverme en numeroRomanoArmado
+
+    cwde    ;muy importante... 
+
+    LEA RDI,[numeroRomanoArmado + eax]       
+
+    REP MOVSB    
+
+    ;______DEJAR ESTE DEBUG ALGO CORRE Y NO ROMPE____
+    push rcx
+    push  rdx
+    call    imprimirNumero
+    pop  rdx
+    pop rcx
+    ;_______Debug______
+
+    ;add      ebx,3   ;3 bytes = 2  bytes letras + 0   
+    
+    add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
+    ;push rcx
+    ;call    imprimirNumeroBien
+    ;pop rcx
+
+    ;call    unDebug
+
+    ret
+
+
 
 unDebug:
 
@@ -638,10 +720,10 @@ unDebug:
 
 unDebugConInt:
 
-    ;mov             word[aux],r9w
+    ;mov             word[aux],rax
     
     mov            rcx,debugConInt
-    mov            rdx,rax
+    mov            rdx,[aux]
     sub            rsp,32
     call            printf
     add             rsp,32
@@ -669,11 +751,6 @@ imprimirNumero:
     ret
 
 imprimirNumeroBien:
-    
-    mov     rcx,debug
-    sub		rsp,32
-    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
-    add		rsp,32
 
     mov     rcx,numeroRomanoArmado
     sub		rsp,32

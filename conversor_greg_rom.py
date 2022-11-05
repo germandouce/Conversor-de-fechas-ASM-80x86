@@ -17,8 +17,8 @@ valores = [
             ]
 
 simbolos = [
-            "M", "CM", "D", "CD",
-            "C", "XC", "L", "XL",
+            "M ", "CM", "D", "CD",
+            "C", "XC","L","XL",
             "X", "IX", "V", "IV",
             "I"
             ]
@@ -48,17 +48,12 @@ def pasarARomano (num, numRomano,i):
         rci -=1
         #print(num)    
 
-    if num > 0:
-         rcx = 1
-    else:
-        rcx = 0
-    i += 1
+    i +=1
+    if num>0:
+        pasarARomano(num, numRomano, i)    
 
     print(numRomano)
 
-    if rcx:
-        pasarARomano(num, numRomano, i)    
-    
     return num, numRomano, i    
     
 def main():
@@ -72,7 +67,7 @@ def main():
 
     diaRomano = enteroARomano(diaEsp)
     print("fin dia")
-    print(numRomanoFinal)
+    #print(numRomanoFinal)
     mesRomano = enteroARomano(mesEsp)
     print("fin mes")
     anioRomano = enteroARomano(anioEsp)
