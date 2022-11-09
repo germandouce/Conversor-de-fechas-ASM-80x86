@@ -40,7 +40,7 @@ section     .data
 
 
     msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD/MM/AAAA)",10,0
-    formatoIngFechaRom        db "%s %s %s",0 ;%s string
+    formatoInputFechaRom        db "%s %s %s",0 ;%s string
 
     msjIngFechaFormatoJul     db  "Ingrese una fecha en formato Juliano (DDD/AA)",10,0
     formatoIngFechaRJul       db "%hi %hi",0 ;
@@ -223,8 +223,28 @@ ingresoFecha:
         je               ingFechaGrego
 
         ;si la fecha es valida hago los pasajes necesarios
+        mov              r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
+        call             convertirGregoARom
 
-        call              convertirGregoARom
+        mov     cx,word[tamNumeroRomanoArmado]
+        LEA     RSI,numeroRomanoArmado
+        LEA     RDI,diaRom      
+        REP MOVSB     
+        
+        mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
+        call            convertirGregoARom
+        mov     cx,word[tamNumeroRomanoArmado]
+        LEA     RSI,numeroRomanoArmado
+        LEA     RDI,mesRom      
+        REP MOVSB 
+
+        mov             r9w,[anioGrego]   ;r9w = anioGregoAux
+        call            convertirGregoARom
+        mov     cx,word[tamNumeroRomanoArmado]
+        LEA     RSI,numeroRomanoArmado
+        LEA     RDI,anioRom      
+        REP MOVSB 
+        
         ;call             convertirGregoAJul
         
 
@@ -262,21 +282,21 @@ ingresoFecha:
         call            printf
         add             rsp,32   
 
-        ;pido dia mes y anio con espacio (rcx la variable donde guardo)
-        ;mov             rcx,inputFilCol
-        ;sub             rsp,32
-        ;call            gets ;solo lee lo ingresado como texto. No castea nada
-        ;add             rsp,32
+        mov             rcx,strInputFechaRom
+        sub             rsp,32
+        call            gets ;solo lee lo ingresado como texto. No castea nada
+        add             rsp,32
 
         call            validarFechaRom ;   valido q sean 3 parametros y q sean letras
         cmp             byte[fechaEsValida],"N"
         je              ingFechaRom
 
+
         call            convertirRomAGrego
         ;convierto sea cual sea la fecha ingresada a gregoriano,
         ;luego valido con la rutina para ese tipo de fechas
         ;q la fecha exista, los anios esten en el rango valido etc
-        call            validarFechaGeneral
+        ;call            validarFechaGeneral
         cmp             byte[fechaEsValida],"N"
         je              ingFechaRom
 
@@ -293,16 +313,28 @@ ingresoFecha:
         
 
         validarFechaRom:
-            ; mov		rcx,inputFilCol
-            ; mov		rdx,formatInputFilCol
-            ; mov		r8,fila
-            ; mov		r9,columna
-            ; sub		rsp,32
-            ; call	sscanf
-            ; add		rsp,32
+            mov     byte[fechaEsValida],"N"        
+            ;asumo no valida y pregunto....
+            mov		rcx,strInputFechaRom
+            mov		rdx,formatoInputFechaRom
+            mov		r8,diaRom
+            mov	    r9,mesRom
+            push    anioRom
+    
 
-            ; cmp		rax,2
-            ; jl		finValidarFechaRom
+            sub		rsp,32
+            call	sscanf
+            add		rsp,32
+
+            pop     r15;popeo de la pila anioRom para poder volver de la call correctamente
+            sub     r15,r15 ;lo dejo vacio por las dudas...     
+            
+            cmp		rax,3      
+            jne		finValidarFechaGrego   
+
+            ;push rcx
+            ;call    unDebug
+            ;pop rcx
 
             ;___validar anio___
             call        validarAnioRom
@@ -318,8 +350,9 @@ ingresoFecha:
             call        validarDiaRom ;letras son correctas 
             ;cmp		byte[fechaEsValida],"N"	
             ;je		    finValidarFechaRom
-
+            
             finValidarFechaRom:
+
             
                 ret
 
@@ -445,6 +478,9 @@ mostrarConversiones:
     add             rsp,32 
     
     mov             rcx, msjInformeFechaRom
+    mov             rdx,diaRom
+    mov             r8,mesRom
+    mov             r9,anioRom
     sub             rsp,32
     call            printf
     add             rsp,32 
@@ -581,14 +617,16 @@ convertirGregoARom:
     ;mov     ebx,22   ;contador en vector simbolos romanos
 
     ;OJOOOOOO
-    mov      r9w,[anioGrego]   ;r9w = numeroAux (4 bytes)    #OJOOOOO
+    ;mov      r9w,[anioGrego]   ;r9w = numeroAux (4 bytes)    #OJOOOOO
     mov      word[tamNumeroRomanoArmado],0
-    ;por unica vez,
     
+    mov      qword[numeroRomanoArmado],0    
+    ;dejo con 0's el lugar donde voy a escribir el numero romano
+
     mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
 
     sigDivision:
-    sub     rdx,rdx ;IMPORTANTISIMOOOOO
+    sub     rdx,rdx ;#IMPORTANTISIMOOOOO
 
     sub     rbx,rbx ;#quito basura por las dudas
     mov     ebx,dword[posEnVectoresRomanos]
@@ -656,23 +694,21 @@ convertirGregoARom:
         cmp         r9w,0 ;numAuxliar
         jg          sigDivision
 
-    push rcx
-    call    imprimirNumeroBien
-    pop rcx
+    ;push rcx
+    ;call    imprimirNumeroBien
+    ;pop rcx
     ;si es mayo a 0 voy a la sig division
+
+    ;add     word[tamNumeroRomanoArmado]
+    ;mov     cx,word[tamNumeroRomanoArmado]
+    ;LEA RSI,numeroRomanoArmado
+    ;L;EA RDI,diaRom      
+    ;REP MOVSB  
+
+    ;push rcx
+    ;call    unDebug
+    ;pop rcx
     
-    ;call    unDebugConInt
-    ;
-    ;mov qword[resultado],rax
-
-    ;mov rdi,mensaje_resul
-    ;mov rsi,qword[resultado]
-
-    ;sub rax,rax
-    ;call printf
-
-    ;rcx = diaGrego
-
     ret
 
 concatenarSimbolo:
@@ -775,7 +811,8 @@ imprimirNumeroBien:
     sub		rsp,32
     call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
     add		rsp,32
-    
+
+
     ret
 
 
