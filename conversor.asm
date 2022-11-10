@@ -78,13 +78,24 @@ section     .data
     ;vecOrigin                   db  "1234",0
 
     vecValoresRomanos           dw  1000, 900, 500, 400,100, 90, 50, 40,10, 9, 5, 4, 1
-    
-    posEnVectoresRomanos        dd  0   ;para facilitar cuentas al moverme en vectores
 
-    ;tamVecDestiny               dw  0
+    posEnVectoresRomanos        dd  0   ;para facilitar cuentas al moverme en vectores    
+    
     tamNumeroRomanoArmado       dw  0
 
-    ;#DUDA es posible iterarlos si no son de  16 bits?
+    posEnNumeroRomano           dd  0
+
+    vecSimbolosRomanosSimple    db  "M",0 
+                                db  "D",0
+                                db  "C",0
+                                db  "L",0
+                                db  "X",0
+                                db  "V",0
+                                db  "I",0
+
+    vecValoresRomanosSimple     dw  1000, 500, 100, 50, 10, 5, 1                                
+
+    numeroGregorianoArmado      dw  0;
 
     ;___
     desplaz                         dw  0
@@ -96,7 +107,10 @@ section     .bss
     ;___auxiliares__
     aux_reg                     resw    1
     contadorRcx                 resq    1
+    
     simboloRomano               resw    1
+    numRomAux                   resb    100
+
     numeroRomanoArmado          resb    100
     vecDestiny                  resb    100    
 
@@ -233,6 +247,7 @@ ingresoFecha:
         
         mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
         call            convertirGregoARom
+
         mov     cx,word[tamNumeroRomanoArmado]
         LEA     RSI,numeroRomanoArmado
         LEA     RDI,mesRom      
@@ -240,6 +255,7 @@ ingresoFecha:
 
         mov             r9w,[anioGrego]   ;r9w = anioGregoAux
         call            convertirGregoARom
+
         mov     cx,word[tamNumeroRomanoArmado]
         LEA     RSI,numeroRomanoArmado
         LEA     RDI,anioRom      
@@ -292,11 +308,39 @@ ingresoFecha:
         je              ingFechaRom
 
 
+        ;laburoooo  #aqui
+        
+        ;___dia___
+        sub     rdx,rdx ;saco basura
+        LEA     rdx,[diaRom]
+        ;en la rutina trabajao con la low efective adress que hay en el edx 
         call            convertirRomAGrego
+        sub             r8,r8
+        mov             r8w,word[numeroGregorianoArmado]
+        mov             word[diaGrego],r8w
+
+        ;___mes____
+        sub     rdx,rdx ;saco basura
+        LEA     rdx,[mesRom]
+        ;en la rutina trabajao con la low efective adress que hay en el edx 
+        call            convertirRomAGrego
+        sub             r8,r8
+        mov             r8w,word[numeroGregorianoArmado]
+        mov             word[mesGrego],r8w
+
+        ;___anio____
+        sub     rdx,rdx ;saco basura
+        LEA     rdx,[anioRom]
+        ;en la rutina trabajao con la low efective adress que hay en el edx 
+        call            convertirRomAGrego
+        sub             r8,r8
+        mov             r8w,word[numeroGregorianoArmado]
+        mov             word[anioGrego],r8w
+
         ;convierto sea cual sea la fecha ingresada a gregoriano,
         ;luego valido con la rutina para ese tipo de fechas
         ;q la fecha exista, los anios esten en el rango valido etc
-        ;call            validarFechaGeneral
+        call            validarFechaGeneral
         cmp             byte[fechaEsValida],"N"
         je              ingFechaRom
 
@@ -330,11 +374,10 @@ ingresoFecha:
             sub     r15,r15 ;lo dejo vacio por las dudas...     
             
             cmp		rax,3      
-            jne		finValidarFechaGrego   
-
-            ;push rcx
-            ;call    unDebug
-            ;pop rcx
+            jne		finValidarFechaGrego
+            
+            ;#DUDA debo validar que la fecha sea valida en romano con simbolos
+            ; x ahora noooooo
 
             ;___validar anio___
             call        validarAnioRom
@@ -725,6 +768,7 @@ concatenarSimbolo:
     imul    ebx,3
     cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
 
+    ;#DUDA + efectivo??? poniendo predeterminadamente 1 byte y si no tiene, sumo 1 en
     jne      noTieneEspacio    
 
         ;si tiene espacio es q hay un solo simbolo Romano,
@@ -815,6 +859,36 @@ imprimirNumeroBien:
 
     ret
 
+;copiar numero
+
+copiarNumeroRomano:
+;El problema es q yo no cuantos digitos tiene el numero que me ingresoe el usuario
+;entonces no lo puedo copiar "completo"
+    push rcx
+    mov     dword[posEnNumeroRomano],0 ;pongo en cero
+    proxChar:
+        mov     rax,0   ;#saco basura x las dudas
+        mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
+        ;EAX = posEnNumero Romano
+        cwde    ;muy importante... 
+        cmp     byte[numRomAux + eax],0   ;si es 0 termino y ni entro, sino sigo
+        je      finCalcTam
+        
+        ;si no es igual
+        inc     word[posEnNumeroRomano] ;pops + 1
+        jmp     proxChar
+
+    finCalcTam:
+    mov     cx,word[posEnNumeroRomano] 
+    inc     rcx ;bytes a copiar = posNumeroRomano + 1 xq arranca en 0
+        
+    LEA RDI,[simboloRomano] ;lo cargo ahi
+
+    REP MOVSB
+
+    pop rcx
+
+    ;una vez q tengo el tamanio,
 
 
 
@@ -824,7 +898,7 @@ imprimirNumeroBien:
 ;a
 ;FOMRATO JULIANO en diaJul - mesJul  - anioJul
 convertirGregoAJul:
-    
+
     ret
 
 
@@ -832,8 +906,169 @@ convertirGregoAJul:
 ;Convierte la fecha q este guardada en diaRom mesRom anioRom 
 ;a gergoriano y guarda lo nuevos valores en diaGrego - mesGrego - anioGreo
 convertirRomAGrego:
+    
+    mov     dword[posEnNumeroRomano],0 ;pongo en cero
+    
+    mov     dword[numeroGregorianoArmado],0
+
+    ;posEnNumRom
+
+    sigCharRom:
+        
+        mov     rax,0   ;#saco basura x las dudas
+        mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
+        ;EAX = posEnNumero Romano
+        cwde    ;muy importante... 
+
+        ;#OJO
+        cdqe
+
+        ;mov     ebx,0   
+        ;cmp     byte[diaRom + eax],0   ;si es 0 termino y ni entro, sino sigo
+        ;cmp     byte[edx + eax],0   ;si es 0 termino y ni entro, sino sigo
+        cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
+        je      finLecturaNumRom
+
+        push rcx
+        call    copiarDigitoEnSimboloRomano
+        pop rcx
+        ;deja simboloRomano = letra a comparar y buscar
+        
+        ;una vez que tengo el digito el la "var" simboloRomano
+        push    rcx
+        call     buscarPosCharRom
+        pop rcx
+        ;deja en posEnVectoresRomanos la pos del simbolo posible a sumar
+
+        sub     r9,r9 ;#saco basura x las dudas
+        sub     ebx,ebx ;saco basura
+        mov     ebx, dword[posEnVectoresRomanos] ;ebx = pos en vectores
+        ;en el vector de simbolos, cada ele mide 2 bytes
+        imul    ebx,2
+        mov     r9w,[vecValoresRomanosSimple + ebx]  
+        ;R9W = valor a sumar o restar    
+
+        chequeoSumOResta:
+            ;pregunto por la sig leyra xa ver si es mayor o menor.
+            ;primero busco su pos en el vec
+            ;#CODIGO REPE, DSPS LO SACO
+            mov     rcx,1 ;siempre copio 1 byte #OJO EL ULTIMO 0?????
+            
+            ;inc     eax ;EAX = posEnNumeroRomano + 1 xq voy a chequear sig letra
+            ;#ojo
+            inc     rax
+            
+            cwde    ;muy importante... 
+            ;#OJO
+            cdqe
+
+            cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
+            je      sumarValor
+            ;sino, copio y vuelco a comparar y obtener pos...
+
+            push rcx
+            call    copiarDigitoEnSimboloRomano
+            pop rcx
+
+            push    rcx
+            call     buscarPosCharRom
+            pop rcx
+            ;queda la pos posEnVectoresRomanos
+
+            sub     ebx,ebx ;saco basura
+            mov     ebx, dword[posEnVectoresRomanos] ;ebx = pos en vectores
+            ;en el vector de simbolos, cada ele mide 2 bytes
+            imul    ebx,2
+            ;uso el r10w xq el r9 ya lo use para el primer simbolo
+            sub     r10,r10 ;#Saco basura, (casi seguro que debo hacerlo)
+            mov     r10w,[vecValoresRomanosSimple + ebx]  
+            ;R10W = Sig Valor
+
+            cmp     r10w,r9w
+            
+            ;SigValor - PrimeroValor = r10w - r9w
+            ;comparo a ver si el sig elemento es menor o mayor. 
+            ;si es menor, sumo el valor
+            jle      sumarValor
+                ;si es mayor, hago r10w - r9w
+        
+                sub     r10w,r9w    ;2do num(grande) - 1erNum (chiquito)
+
+                ;avanzo la posEnNumeroRomano 1 + xq lei 2 letras
+                add     dword[posEnNumeroRomano],1   ;pos + 1 
+
+                mov     r9w,r10w    ;dejo en r10w el resultado de la resta
+
+        sumarValor:
+            add     word[numeroGregorianoArmado],r9w
+
+
+        ;push rcx
+        ;mov            rcx,debugConInt
+        ;mov            rdx,[numeroGregorianoArmado]
+        ;sub            rsp,32
+        ;call            printf
+        ;add             rsp,32
+        ;pop rcx
+                
+        add     dword[posEnNumeroRomano],1   ;pos + 1 
+        jmp     sigCharRom 
+
+    finLecturaNumRom:
+
+        ret
+
+
     ret
 
+copiarDigitoEnSimboloRomano:
+    
+    push    rcx
+
+    mov     rcx,1 ;siempre copio 1 byte #OJO EL ULTIMO 0?????
+        
+    ;LEA RSI,[diaRom + eax]  ;dde este digito copio 1 byte        
+    ;LEA RSI,[edx + eax]  ;dde este digito copio 1 byte        
+    LEA RSI,[rdx + rax]  ;dde este digito copio 1 byte        
+
+    LEA RDI,[simboloRomano] ;lo cargo ahi
+
+    REP MOVSB
+
+    pop rcx
+
+    ret
+
+
+buscarPosCharRom:
+    
+    mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
+    
+    sigCharRomEnVec:
+
+        LEA     RSI,[simboloRomano]   ;dejo en el rsi el simbolo
+
+        MOV     RCX,1   ;bytes a comparar, siempre uno a la vez
+        sub     ebx,ebx ;#quito basura por las dudas
+        mov     ebx,dword[posEnVectoresRomanos]
+        imul    ebx,2   ;xq son de 2 bytes cada "elemento " (Letra + el 0)
+
+        LEA     RDI,[vecSimbolosRomanosSimple + ebx ]
+        
+        REPE    CMPSB        ;comparo si el simbolo del nuemro es igual al del vecto
+
+        je      finBuscarPosChar
+        ;si no es igual, sumo 1 pos. Si es igual salto y
+        ; en posEnVectoresRomanos quedo la pos 
+        
+        inc     dword[posEnVectoresRomanos] ;sig letra o par de letras
+    
+        jmp    sigCharRomEnVec
+
+    finBuscarPosChar:
+        ret   
+    
+    
 
 ;Convierte la fecha q este guardada en  
 ;FOMRATO JULIANO en diaJul - mesJul  - anioJul
