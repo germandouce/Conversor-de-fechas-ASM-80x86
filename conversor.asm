@@ -237,29 +237,34 @@ ingresoFecha:
         je               ingFechaGrego
 
         ;si la fecha es valida hago los pasajes necesarios
+
+        ;_____DIA____
         mov              r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
         call             convertirGregoARom
-
-        mov     cx,word[tamNumeroRomanoArmado]
-        LEA     RSI,numeroRomanoArmado
-        LEA     RDI,diaRom      
-        REP MOVSB     
+        ;#OJO PUEDE ESTAR MALLLL
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,[numeroRomanoArmado]
+        LEA             RDI,[diaRom]      
+        REP     MOVSB     
         
+        ;_____MES____
+        ;#AGREGAR CORCHETESSS en numeroRomanoArmado y mes romano
         mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
         call            convertirGregoARom
 
-        mov     cx,word[tamNumeroRomanoArmado]
-        LEA     RSI,numeroRomanoArmado
-        LEA     RDI,mesRom      
-        REP MOVSB 
-
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,numeroRomanoArmado
+        LEA             RDI,mesRom      
+        REP     MOVSB 
+        
+        ;_____ANIO____
+        ;#AGREGAR CORCHETESSS en numeroRomanoArmado y anio romano
         mov             r9w,[anioGrego]   ;r9w = anioGregoAux
         call            convertirGregoARom
-
-        mov     cx,word[tamNumeroRomanoArmado]
-        LEA     RSI,numeroRomanoArmado
-        LEA     RDI,anioRom      
-        REP MOVSB 
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,numeroRomanoArmado
+        LEA             RDI,anioRom      
+        REP     MOVSB 
         
         ;call             convertirGregoAJul
         
