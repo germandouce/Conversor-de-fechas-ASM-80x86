@@ -95,7 +95,9 @@ section     .data
 
     vecValoresRomanosSimple     dw  1000, 500, 100, 50, 10, 5, 1                                
 
-    numeroGregorianoArmado      dw  0;
+    numeroGregorianoArmado      dw  0
+
+    numeroDiaJuliano            dw  0
 
     ;___
     desplaz                         dw  0
@@ -238,6 +240,7 @@ ingresoFecha:
 
         ;si la fecha es valida hago los pasajes necesarios
 
+        ;_____GREGORIANO ---> ROMANO
         ;_____DIA____
         mov             r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
         call            convertirGregoARom
@@ -264,7 +267,9 @@ ingresoFecha:
         LEA             RDI,[anioRom]      
         REP     MOVSB 
         
-        ;call             convertirGregoAJul
+        ;_____GREGORIANO ---> JULIANO
+        ;laburoooo  #aqui
+        call             convertirGregoAJul
         
 
         jmp              finIngresoFecha
@@ -311,8 +316,7 @@ ingresoFecha:
         je              ingFechaRom
 
 
-        ;laburoooo  #aqui
-        
+        ;ROMANO ---> GREGORIANO    
         ;___dia___
         sub     rdx,rdx ;saco basura
         LEA     rdx,[diaRom]
@@ -323,18 +327,18 @@ ingresoFecha:
         mov             word[diaGrego],r8w
 
         ;___mes____
-        sub     rdx,rdx ;saco basura
-        LEA     rdx,[mesRom]
-        ;en la rutina trabajao con la low efective adress que hay en el edx 
+        sub             rdx,rdx ;saco basura
+        LEA             rdx,[mesRom]
+
         call            convertirRomAGrego
         sub             r8,r8
         mov             r8w,word[numeroGregorianoArmado]
         mov             word[mesGrego],r8w
 
         ;___anio____
-        sub     rdx,rdx ;saco basura
-        LEA     rdx,[anioRom]
-        ;en la rutina trabajao con la low efective adress que hay en el edx 
+        sub             rdx,rdx ;saco basura
+        LEA             rdx,[anioRom]
+
         call            convertirRomAGrego
         sub             r8,r8
         mov             r8w,word[numeroGregorianoArmado]
@@ -865,6 +869,7 @@ imprimirNumeroBien:
 
 ;copiar numero
 
+;#SACAR
 copiarNumeroRomano:
 ;El problema es q yo no cuantos digitos tiene el numero que me ingresoe el usuario
 ;entonces no lo puedo copiar "completo"
@@ -903,6 +908,57 @@ copiarNumeroRomano:
 ;FOMRATO JULIANO en diaJul - mesJul  - anioJul
 convertirGregoAJul:
 
+    mov         word[numeroDiaJuliano],0
+    sub         r9,r9 ;saco basuraa
+    mov         r9w,[diaGrego]  ;r9w = numero pivot
+    add         word[numeroDiaJuliano],r9w  ;sumo los dias siempre
+
+    sub         r10,r10
+    mov         r10w,word[mesGrego] ;r10w = mesAux  
+
+    cmp         byte[esBisiesto],"S"
+    jne         restarSigMes
+    ;si es bisiesto pregunto si el mes es mayor a 2
+        cmp         word[mesGrego],2
+        jle         restarSigMes ;listo, resto meses
+        ;si es mayor a 2 sumo 1 al dia
+            inc         word[numeroDiaJuliano]  ;NumeroDiaJuliano + 1
+
+    restarSigMes:
+
+        dec     r10w
+        cmp     r10w,0
+        je      finRestarMeses    ;si es 1 o mas resto sig mes
+
+        sub     rax,rax            
+        mov     ax,r10w    ;rax = mesAux
+        cwde    ;#va????
+        imul    eax,2   ;cada ele de vecDiasMeses es una word
+        sub     rbx,rbx
+        add     bx,[vecDiasMeses + eax - 2 ] ; mesAux - 2 bytes = mesAux - 1mes
+        ;bx = dias mesAux
+        add     word[numeroDiaJuliano],bx   ;los sumo
+
+        push rcx
+        mov            rcx,debugConInt
+        mov            rdx,r10
+        sub            rsp,32
+        call            printf
+        add             rsp,32
+        pop rcx
+
+        jmp restarSigMes
+
+    finRestarMeses:
+
+        push rcx
+        mov            rcx,debugConInt
+        mov            rdx,[numeroDiaJuliano]
+        sub            rsp,32
+        call            printf
+        add             rsp,32
+        pop rcx
+    
     ret
 
 
@@ -920,6 +976,7 @@ convertirRomAGrego:
     sigCharRom:
         
         mov     rax,0   ;#saco basura x las dudas
+        ;#OJO TAMANIOS
         mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
         ;EAX = posEnNumero Romano
         cwde    ;muy importante... 
@@ -1005,7 +1062,6 @@ convertirRomAGrego:
 
         sumarValor:
             add     word[numeroGregorianoArmado],r9w
-
 
         ;push rcx
         ;mov            rcx,debugConInt
