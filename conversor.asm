@@ -149,13 +149,33 @@ section     .text
 main:
     mov rbp, rsp; for correct debugging
 
+    ;#DUDA el resto de flags en no? o reseto en cada vuelta del program??
+    ;calll          resetarFlags ;todo en no?
+
     call            ingresoFormatoFecha
-    
+    ;activa flags de formatos permirmitidos segun el ingreso
+    ;ingresoJull "s"    ingresRom "s" ingreso Grego "s"
     call            ingresoFecha
+    
+    ;#VER
+    ;call           menuFormatoAConvertir   
+    ;pregunto por los flags ;ingresoJull "s"  ingresRom "s" ingreso Grego "s"
+    ;y tengo 3 menues ; menu Ingreso Rom (convierte a 1 los otros 2 etc)
+    ;segun eleccion prendo flags mostrar converisiones
+    ;mostrarRom "s", mostrarJul "S", mostrarGreo "S"
+    ;#DUDA el resto en no? o reseto en cada vuelta del program??
+    
+    ;call           rutinaConversora        
+    ;pregunta x cada flag y convierte segun corresponda
 
     call            mostrarConversiones
+    ;pregunta x cada flag ;mostrarRom "s", mostrarJul "S", mostrarGreo "S" 
+    ;y muestra solo lo pedido
 
+    ;podria haber un loop q pregunte si se quiere ingresar otro numero
+    ;o terminar el programa
 
+    finPrgm:
 
 ret
 
@@ -268,9 +288,11 @@ ingresoFecha:
         REP     MOVSB 
         
         ;_____GREGORIANO ---> JULIANO
-        ;laburoooo  #aqui
-        call             convertirGregoAJul
-        
+        ;____DIA (Y MES )____
+        call             convertirDiaGregoADiaJul
+    
+        ;___ANIO___
+        call             convertirAnioGregoAAnioJul
 
         jmp              finIngresoFecha
         
@@ -346,17 +368,22 @@ ingresoFecha:
 
         ;convierto sea cual sea la fecha ingresada a gregoriano,
         ;luego valido con la rutina para ese tipo de fechas
-        ;q la fecha exista, los anios esten en el rango valido etc
+        ;q la fecha exista (29/2/soloAnioBisiesto), anios en el rango valido etc
         call            validarFechaGeneral
         cmp             byte[fechaEsValida],"N"
         je              ingFechaRom
 
-        ;como ingreso en Rom y ya pase a Grego para validar, 
+        ;como ingreso en Rom y ya pase a Grego (para validar), 
         ;solo me queda pasar a Juliano,
-        ;Como A grego ya pase antes, aprovecho la rutina q tengo
-        ;xa ir de Grego a Rom
-
-        call            convertirGregoAJul
+        ;aprovecho la rutina q tengo xa ir de Grego a Rom
+        ; #FALTAAAA
+        ;laburoooo  #aqui
+        ;_____GREGORIANO ---> JULIANO
+        ;____DIA (Y MES )____
+        call             convertirDiaGregoADiaJul
+    
+        ;___ANIO___
+        call             convertirAnioGregoAAnioJul
         
         ;ya tengo convertida la fecha todos los formatos.
 
@@ -439,11 +466,14 @@ ingresoFecha:
         add             rsp,32
 
 
-        ;pido dia mes y anio con espacio (rcx la variable donde guardo)
-        ;mov             rcx,inputFilCol
-        ;sub             rsp,32
-        ;call            gets ;solo lee lo ingresado como texto. No castea nada
-        ;add             rsp,32
+        mov             rcx,strInputFechaJul
+        sub             rsp,32
+        call            gets ;solo lee lo ingresado como texto. No castea nada
+        add             rsp,32
+
+        call            validarFechaRom ;   valido q sean 3 parametros y q sean letras
+        cmp             byte[fechaEsValida],"N"
+        je              ingFechaRom
 
         call            validarFechaJul ;   valido q sean 2 parametros y q los numeros sean validos
         cmp             byte[fechaEsValida],"N"
@@ -453,7 +483,7 @@ ingresoFecha:
         ;No hay manera de que la fecha jul no sea valida en terminos de
         ;fechas validas ya que son numeros. Ya valide antes q estos
         ;estuvieran en el rango esperado.
-        call            convertirJulAGrego
+        ;call            convertirDiaJulADiaYMesGrego
         
         ;aprovecho la rutina q ya tengo
         call            convertirGregoARom
@@ -536,6 +566,8 @@ mostrarConversiones:
     add             rsp,32 
 
     mov             rcx, msjInformeFechaJul
+    mov             rdx, [diaJul]
+    mov             r8, [anioJul]
     sub             rsp,32
     call            printf
     add             rsp,32 
@@ -902,16 +934,16 @@ copiarNumeroRomano:
 
 
 ;--------------------------------------------------------------------------------
-;Convierte la fecha q este guardada en  
-;FORMATO GREGORIANO endiaGrego - mesGrego  - anioGreo  
-;a
-;FOMRATO JULIANO en diaJul - mesJul  - anioJul
-convertirGregoAJul:
+;-> PRECONDICIONES: Requiere un dia, mes y anio guardados en 
+;[diaGrego] , [mesGrego] y [anioGrego]  
+;-> POSTCONDICIONES: Deja el numero de dia en [diaJul]
+convertirDiaGregoADiaJul:
 
-    mov         word[numeroDiaJuliano],0
+    mov         word[diaJul],0
+
     sub         r9,r9 ;saco basuraa
     mov         r9w,[diaGrego]  ;r9w = numero pivot
-    add         word[numeroDiaJuliano],r9w  ;sumo los dias siempre
+    add         word[diaJul],r9w  ;sumo los dias siempre
 
     sub         r10,r10
     mov         r10w,word[mesGrego] ;r10w = mesAux  
@@ -922,7 +954,7 @@ convertirGregoAJul:
         cmp         word[mesGrego],2
         jle         restarSigMes ;listo, resto meses
         ;si es mayor a 2 sumo 1 al dia
-            inc         word[numeroDiaJuliano]  ;NumeroDiaJuliano + 1
+            inc         word[diaJul]  ;diaJul + 1
 
     restarSigMes:
 
@@ -933,30 +965,46 @@ convertirGregoAJul:
         sub     rax,rax            
         mov     ax,r10w    ;rax = mesAux
 
-        
-
         cwde    ;#va????
         imul    eax,2   ;cada ele de vecDiasMeses es una word
         sub     rbx,rbx
         add     bx,[vecDiasMeses + eax - 2 ] ; mesAux - 2 bytes = mesAux - 1mes
         ;bx = dias mesAux
-        add     word[numeroDiaJuliano],bx   ;los sumo
-
-        
+        add     word[diaJul],bx   ;los sumo
 
         jmp restarSigMes
 
     finRestarMeses:
 
-        push rcx
-        mov            rcx,debugConInt
-        mov            rdx,[numeroDiaJuliano]
-        sub            rsp,32
-        call            printf
-        add             rsp,32
-        pop rcx
-    
     ret
+
+
+convertirAnioGregoAAnioJul:
+    ;-> PRECONDICIONES: Requiere un anio guardados en [anioGrego]  
+    ;-> POSTCONDICIONES: Deja el numero de dia en [diaJul]
+    ;# Si. Podrías considerar por ej un rango de años valido desde 1950 a 2049. 
+    ;O sea si se intentara convertir el año 1949 o menor lo consideras invalido, 
+    ;lo mismo para 2050 o mayor.
+    ;-> ACLARACION: Por homogeneidad, restringi previamente el ingreso en cualquier 
+    ;formato de fecha al rango [1950,1949] 
+    
+    sub     r10,r10 ;saco basura
+    mov     r10w,[anioGrego]
+
+    cmp     word[anioGrego],2000
+    jl      menorADosmil
+    ;si es mayor o igual, resto 1900 y luego 100 = -1900 -100 = -2000
+    ;(no es "declarativo" a nivel lectura del codigo pero ahorra lineas)
+    sub     r10w,100
+    menorADosmil:
+    ;si es menor, resto solo 1900
+        sub     r10w,1900
+    
+    mov     word[anioJul],r10w
+
+    anioInvalido:
+        
+        ret
 
 
 ;-----------------------------------------------------------------------------------
@@ -1123,7 +1171,7 @@ buscarPosCharRom:
         jmp    sigCharRomEnVec
 
     finBuscarPosChar:
-        ret   
+        ret
     
     
 
@@ -1132,7 +1180,47 @@ buscarPosCharRom:
 ;a
 ;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
 ;------------------------------------------------------------------------
-convertirJulAGrego:
+convertirDiaJulADiaYMesGrego:
+
+    mov         word[diaJul],0
+
+    sub         r9,r9 ;saco basuraa
+    mov         r9w,[diaGrego]  ;r9w = numero pivot
+    add         word[diaJul],r9w  ;sumo los dias siempre
+
+    sub         r10,r10
+    mov         r10w,word[mesGrego] ;r10w = mesAux  
+
+    cmp         byte[esBisiesto],"S"
+    jne         restarSigMes
+    ;si es bisiesto pregunto si el mes es mayor a 2
+        cmp         word[mesGrego],2
+        jle         restarSigMes ;listo, resto meses
+        ;si es mayor a 2 sumo 1 al dia
+            inc         word[diaJul]  ;diaJul + 1
+
+    restarSigMes:
+
+        dec     r10w
+        cmp     r10w,0
+        je      finRestarMeses    ;si es 1 o mas resto sig mes
+
+        sub     rax,rax            
+        mov     ax,r10w    ;rax = mesAux
+
+        cwde    ;#va????
+        imul    eax,2   ;cada ele de vecDiasMeses es una word
+        sub     rbx,rbx
+        add     bx,[vecDiasMeses + eax - 2 ] ; mesAux - 2 bytes = mesAux - 1mes
+        ;bx = dias mesAux
+        add     word[diaJul],bx   ;los sumo
+
+        jmp restarSigMes
+
+    finRestarMeses:
+
+    ret
+
     ret
 
 
