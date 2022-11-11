@@ -28,6 +28,6 @@ def ymd(Y,N):
     D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
     return Y, M, D
 
-print(doy(2001,3,1))
+print(doy(2020,12,31))
 
 #print(ymd(1998,59))

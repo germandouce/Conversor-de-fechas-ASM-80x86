@@ -932,6 +932,9 @@ convertirGregoAJul:
 
         sub     rax,rax            
         mov     ax,r10w    ;rax = mesAux
+
+        
+
         cwde    ;#va????
         imul    eax,2   ;cada ele de vecDiasMeses es una word
         sub     rbx,rbx
@@ -939,13 +942,7 @@ convertirGregoAJul:
         ;bx = dias mesAux
         add     word[numeroDiaJuliano],bx   ;los sumo
 
-        push rcx
-        mov            rcx,debugConInt
-        mov            rdx,r10
-        sub            rsp,32
-        call            printf
-        add             rsp,32
-        pop rcx
+        
 
         jmp restarSigMes
 
