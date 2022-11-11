@@ -709,29 +709,38 @@ validarFechaGeneral:
                 call        anioBisiesto 
                 ;esta rutina usa el bx, por eso tengo q reptir abajo... 
                 mov         bx,word[desplaz]
-                mov         rcx,2                       ;1) bytes a comparar
-                lea         rsi,[diaGrego]  
-                
-
+                mov         rcx,2              ;1) bytes a comparar
+                ;#DUDA SUPEEEER DUDAAAAAA
+                ;#128
+                ;lea         rsi,[diaGrego]  
                 ;2) RSI = DIA GREGO
+                ;#AHORA NO ACEPTA MAYORES  127 CON GREGO DIRECTO PERO
+                ;SI CUANDO UNO LOS METE DDE EL ROMANO
+                sub        rsi,rsi
+                sub        rdi,rdi
+                
+                sub r10,r10
                 
                 cmp		        byte[esBisiesto],"S"
                     je          diaAnioBisiesto            
-            
-                    lea         rdi,[vecDiasMeses + ebx]   
+
+                    ;lea         rdi,[vecDiasMeses + ebx]   
+                    mov         r10w,[vecDiasMeses + ebx]   
                     ;3) tabla de dias destino -> rdi
                                 
                     jmp         diaEnRango
                 
                 diaAnioBisiesto:
                 
-                    lea         rdi,[vecDiasMesesBisiestos + ebx] 
+                    ;lea         rdi,[vecDiasMesesBisiestos + ebx] 
+                    mov         r10w,[vecDiasMesesBisiestos + ebx] 
                     ;3) tabla de dias destino -> rdi
                     
 
                 diaEnRango: ;pregunto si el dia esta en el rango
-                
-                repe        cmpsb                              
+                ;lea         rsi,[diaGrego]  
+                ;repe        cmpsb                              
+                cmp         word[diaGrego],r10w
                 jg          finValidarDiaGrego 
                 
                 mov     byte[fechaEsValida],"S"
