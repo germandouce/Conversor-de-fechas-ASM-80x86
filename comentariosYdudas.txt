@@ -12,6 +12,33 @@ ______Contador de tiempo______________________________________________
 + 5hrs 15 min 23/10/2022 (estructura gral del prgrm)
 _______________________________________________
 
+QUE FALTA De + importante a - importante
+
+1)-> Comversor de Dia Jul A Gregoriano
+2)-> crear rutina copiando lo q hay en validacion para convertir 
+anio jul a anio Grego 
+3)-> Validar fecha Romana a NIVEL LETRAS (SEA ALGUNA DEL VECTOR)
+creo q no voy a valiar xq no se como que el numero en si sea valido
+4)-> Hacer una rutina q comprenda el conversor de NUMEROS romano - grego y el viceversa
+Y meter ahi los movs que hay q hacer para dia mes y anio
+5)-> descomentar y chequear funcionamiento tieniendo los 4 conversores 
+(ya con subrutinas hechas)
+    -juliano a A Romano 
+    -Romano a Juliana
+    (los otros 4 deberian funcar)
+
+7)-> modularizar en gral
+8)-> sacar #
+9)Testing..
+______(Tp con minimos requisitos???) PREENTREGA?
+ALCARANDO o no aclarando que no doy mucha libertad al usuario para elegir que
+converitr y a q, y q no.
+6)-> Cambiar "completamente" fujo del prgm para que se le pregunte al usuario
+a q queire conevrtir, ver comentarios en main.
+
+
+
+
 
 Buenas, quería aclarar un par de dudas que tenía sobre la consigna del TP 20.
 -        ¿Se debería poder convertir fechas del formato Juliano al Romano y viceversa?
