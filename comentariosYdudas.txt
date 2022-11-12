@@ -13,8 +13,6 @@ ______Contador de tiempo______________________________________________
 _______________________________________________
 
 QUE FALTA De + importante a - importante
-0-> BUG EN VALIDAR FECHA GENERAL ACEPTA NUMEROS MUY GRANDES NO SE POR QUE
-
 1)-> Comversor de Dia Jul A Gregoriano
 2)-> crear rutina copiando lo q hay en validacion para convertir 
 anio jul a anio Grego 

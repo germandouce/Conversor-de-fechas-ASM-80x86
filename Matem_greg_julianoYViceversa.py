@@ -30,4 +30,4 @@ def ymd(Y,N):
 
 print(doy(2001,4,5))
 
-print(ymd(2001,95))
+print(ymd(2004,366))

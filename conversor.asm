@@ -28,7 +28,7 @@ section     .data
     debugConChar                db "este es el char: %s",10,0
     formatoChar                 db "%s",10,0
     debugConInt                db  "esta es el numero %hi",10,10,0
-    debugConints                db "debug %hi %hi %hi",10,0
+    debugConInts                db "dia %hi y mes: %hi",10,0
     formatoNum                  db " este es el numero: %hi %hi",10,0
 
     ;____ msjs ingresos usuario con formatos ___
@@ -473,17 +473,56 @@ ingresoFecha:
         cmp             byte[fechaEsValida],"N"
         je              ingFechaJul
 
-
-        ;No hay manera de que la fecha jul no sea valida en terminos de
-        ;fechas validas ya que son numeros. Ya valide antes q estos
-        ;estuvieran en el rango esperado.
-        ;call            convertirDiaJulADiaYMesGrego
+        ;call            convertirAnioJulAAnioGrego
+        ;No es necesario porque al validar el dia juliano
+        ;ya valide que 366 no pueda ser valido en un anio no bisiesto
         
-        ;aprovecho la rutina q ya tengo
+        call            convertirDiaJulADiaYMesGrego
+        
+        ;como ya tengo los dias, meses y anioos, 
+        ;aprovecho la rutina que tengo
         ;#OJO REQUIERE FECHA EN DIA MES ANIO ROM
         ;#FALTAN PRECONDICIONES
-        ;call            convertirGregoARom
+
+        ;---------------Meter en una sola rutina si es posible
+        ;_____GREGORIANO ---> ROMANO
+        ;_____DIA____
+        ; mov             r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
+        ; push rcx
+        ; call            convertirGregoARom
+        ; pop rcx
+
+        ; mov             cx,word[tamNumeroRomanoArmado]
+        ; LEA             RSI,[numeroRomanoArmado]
+        ; LEA             RDI,[diaRom]      
+        ; REP     MOVSB     
         
+        ; ;_____MES____
+        ; mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
+
+        ; push rcx
+        ; call            convertirGregoARom
+        ; pop rcx
+
+        ; mov             cx,word[tamNumeroRomanoArmado]
+        ; LEA             RSI,[numeroRomanoArmado]
+        ; LEA             RDI,[mesRom]      
+        ; REP     MOVSB 
+        
+        ; ;_____ANIO____
+        ; mov             r9w,[anioGrego]   ;r9w = anioGregoAux
+
+        ; push rcx
+        ; call            convertirGregoARom
+        ; pop rcx
+
+        ; mov             cx,word[tamNumeroRomanoArmado]
+        ; LEA             RSI,[numeroRomanoArmado]
+        ; LEA             RDI,[anioRom]      
+        ; REP     MOVSB       
+    
+        ;---------------Meter en una sola rutina si es posible
+
         ;ya tengo convertida la fecha todos los formatos.
 
         jmp             finIngresoFecha
@@ -545,31 +584,10 @@ ingresoFecha:
                 cmp          word[diaJul],0 
                 jle          finValidarDiaJul ;NO puede ser 0
 
-                ;______ Desde aca #ver
-                ;call           convertir anioJulAAnioGrego
+                call           convertirAnioJulAAnioGrego
                 ;y convierto, luego, llamo a a ver si es bisiesto o no y segun eso 
                 ;chequeo si puede ser 366. ese es el unico numero que me jode
-                
-                sub     r10,r10 ;saco basura
-                mov     r10w,[anioJul]
 
-                cmp     word[anioJul],50
-                jge     mayorACincuenta
-                ;si es menor a 50 sumo 100 y luego 1900 = 100 + 1900 = 2000
-                ;(no es "declarativo" a nivel lectura del codigo pero ahorra lineas)
-                ;2000, 2001, 2049 etc
-                add     r10w,100
-                mayorACincuenta:
-                ;si es mayor a 50 solo 1900 (1950 1951 1999 etc)
-                    add     r10w,1900
-                
-                mov     word[anioGrego],r10w
-                
-                ;___ # VER hasta aca en subrutina  convertir anioJulAAnioGrego
-
-                ;ya tengo el anio en anioGrego
-                ;#FALTA PRECONDICIONES RUTINA ES BISISESTO
-                
                 call        anioBisiesto
                 ;deja en esBisiesto "S" O "N"
                 cmp		        byte[esBisiesto],"S"
@@ -709,13 +727,16 @@ validarFechaGeneral:
                 call        anioBisiesto 
                 ;esta rutina usa el bx, por eso tengo q reptir abajo... 
                 mov         bx,word[desplaz]
+                
+                ;#OJO
+                ;#comentar y cheuqearrr q no rompa el rcxxx
                 mov         rcx,2              ;1) bytes a comparar
                 ;#DUDA SUPEEEER DUDAAAAAA
                 ;#128
                 ;lea         rsi,[diaGrego]  
                 ;2) RSI = DIA GREGO
                 ;#AHORA NO ACEPTA MAYORES  127 CON GREGO DIRECTO PERO
-                ;SI CUANDO UNO LOS METE DDE EL ROMANO
+                ;#TESTEARRR
                 sub        rsi,rsi
                 sub        rdi,rdi
                 
@@ -1235,9 +1256,33 @@ buscarPosCharRom:
     finBuscarPosChar:
         ret
     
-    
 
-;#FALTA
+;--------------------------------------------------------------------------
+;#FALTAAA PRECONDICIONES,
+;-> PRECONDICIONES: debe haber un anio en AnioGrego
+;
+;-> POSTCONDICIONES
+;--------------------------------------------------------------------------
+convertirAnioJulAAnioGrego:
+
+    sub     r10,r10 ;saco basura
+    mov     r10w,[anioJul]
+
+    cmp     word[anioJul],50
+    jge     mayorACincuenta
+    ;si es menor a 50 sumo 100 y luego 1900 = 100 + 1900 = 2000
+    ;(no es "declarativo" a nivel lectura del codigo pero ahorra lineas)
+    ;2000, 2001, 2049 etc
+    add     r10w,100
+    mayorACincuenta:
+    ;si es mayor a 50 solo 1900 (1950 1951 1999 etc)
+        add     r10w,1900
+    
+    mov     word[anioGrego],r10w
+
+    ret
+
+
 ;Convierte la fecha q este guardada en  
 ;FOMRATO JULIANO en diaJul  - anioJul
 ;a
@@ -1261,45 +1306,67 @@ convertirDiaJulADiaYMesGrego:
     ;    M = 1
     ;D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
 
-    mov         word[diaJul],0
+    mov         word[diaGrego],0
+    mov         word[mesGrego],0
 
-    sub         r9,r9 ;saco basuraa
-    mov         r9w,[diaGrego]  ;r9w = numero pivot
-    add         word[diaJul],r9w  ;sumo los dias siempre
-
-    sub         r10,r10
-    mov         r10w,word[mesGrego] ;r10w = mesAux  
-
+    sub         r10,r10 ;saco basuraa
+    mov         r10w,[diaJul]  ;r10w = diaGregoPivot
+    
     cmp         byte[esBisiesto],"S"
-    jne         sumarSigMes
-    ;si es bisiesto pregunto si el mes es mayor a 2
-        cmp         word[mesGrego],2
-        jle         sumarSigMes ;listo, resto meses
-        ;si es mayor a 2 sumo 1 al dia
-            inc         word[diaJul]  ;diaJul + 1   
+    jne         sumarSigMesNoBisesto
+    ;si es bisiesto
+    ;#VER posibilidad de hacer
+    ;lea        rdx, vecDiasMesesBisiestos 
+    ;y laburar con esa direc (xa el final)
+    sumarSigMesBisesto:
 
-    sumarSigMes:
+        cmp     r10w,0          ;r10w = diaGregoPivot
+        jle     finSumarMeses ;si el diaGregoPivot > 0, continuo
+        ;cuando el diaGregoPivot sea maenor a 0, salto y queda
+        ;guardado en [mesGrego] el ult mes y [diaGrego] el num de dias
+        ;de la vuelta anterior.
 
-        dec     r10w
-        cmp     r10w,0
-        jle     finSumarMeses    ;si es 1 o mas resto sig mes
+        mov     word[diaGrego],r10w ;guardo el numero de dias 
+        inc     word[mesGrego] ;avanzo 1 mes xq quedan dias
 
         sub     rax,rax            
-        mov     ax,r10w    ;rax = diaDelMesAux
+        mov     ax,word[mesGrego]  ;rax = NumDeMes
 
         cwde    ;#va????
-        imul    eax,2   ;cada ele de vecDiasMeses es una word
+        imul    eax,2   ;cada ele de vecDiasMesesBisiestos es una word
         sub     rbx,rbx
-        add     bx,[vecDiasMeses + eax - 2 ] ; mesAux - 2 bytes = mesAux - 1mes
-        ;bx = dias mesAux
-        add     word[diaJul],bx   ;los sumo
+        mov     bx,[vecDiasMesesBisiestos + eax - 2 ] ; NumDeMes - 2 bytes = NumDeMes - 1mes
+        ;bx = diasMes
+        sub     r10w,bx   ;diaGregoPivot - diasMes
 
-        jmp sumarSigMes
+        jmp sumarSigMesBisesto
+
+    sumarSigMesNoBisesto:
+
+        cmp     r10w,0          ;r10w = diaGregoPivot
+        jle     finSumarMeses ;si el diaGregoPivot > 0, continuo
+        ;cuando el diaGregoPivot sea maenor a 0, salto y queda
+        ;guardado en [mesGrego] el ult mes y [diaGrego] el num de dias
+        ;de la vuelta anterior.
+
+        mov     word[diaGrego],r10w ;guardo el numero de dias 
+        inc     word[mesGrego] ;avanzo 1 mes xq quedan dias
+
+        sub     rax,rax            
+        mov     ax,word[mesGrego]  ;rax = NumDeMes
+
+        cwde    ;#va????
+        imul    eax,2   ;cada ele de vecDiasMesesBisiestos es una word
+        sub     rbx,rbx
+        mov     bx,[vecDiasMeses + eax - 2 ] ; NumDeMes - 2 bytes = NumDeMes - 1mes
+        ;bx = diasMes
+        sub     r10w,bx   ;diaGregoPivot - diasMes
+
+        jmp sumarSigMesNoBisesto
 
     finSumarMeses:
 
-    ret
-
+        ret
 
 
 ;chequea si un año es bisiesto y coloca en la var esBisiesto "S" o "N" 
