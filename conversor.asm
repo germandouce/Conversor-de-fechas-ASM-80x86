@@ -10,7 +10,8 @@
 ; - Formato Juliano (DDD/AA): 288/20
 ;****************************************************************************************************
 ;Comentarios y suposiciones del enunciado:
-;
+;-> Por homogeneidad, restringir previamente el ingreso en cualquier 
+;formato de fecha al rango [1950,2049] 
 ;
 ;
 
@@ -22,27 +23,27 @@ extern gets
 
 section     .data
 
-    debug                       db  "debug",10,10,0
-    tiene                       db  "tiene espacio",10,10,0
+    debug                     db  "debug",10,10,0
+    tiene                     db  "tiene espacio",10,10,0
     
-    debugConChar                db "este es el char: %s",10,0
-    formatoChar                 db "%s",10,0
-    debugConInt                db  "esta es el numero %hi",10,10,0
-    debugConInts                db "dia %hi y mes: %hi",10,0
-    formatoNum                  db " este es el numero: %hi %hi",10,0
+    debugConChar              db "este es el char: %s",10,0
+    formatoChar               db "%s",10,0
+    debugConInt               db  "esta es el numero %hi",10,10,0
+    debugConInts              db "dia %hi y mes: %hi",10,0
+    formatoNum                db " este es el numero: %hi %hi",10,0
 
     ;____ msjs ingresos usuario con formatos ___
     msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
     formatoCaracterIndicFecha db  "%hi"
     
-    msjIngFechaFormatoGrego   db  "Ingrese una fecha en formato gregoriano (DD MM AAAA) separando con espacios los numeros ej: 05 04 2001",10,0
+    msjIngFechaFormatoGrego   db  "Ingrese una fecha en formato gregoriano (DD MM AAAA) separando con espacios los numeros ej: 14 10 2020",10,0
     formatoInputFechaGrego    db  "%hi %hi %hi" ;hi (16 bits, 2 bytes 1 word)
     ;garantizo que se pisa en cada nuevo ingreso,
 
-    msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD MM AAAA)",10,0
+    msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD MM AAAA) separando con espacios los numeros ej: IX X MMXX",10,0
     formatoInputFechaRom      db "%s %s %s",0 ;%s string
 
-    msjIngFechaFormatoJul     db    "Ingrese una fecha en formato Juliano (DDD AA)",10,0
+    msjIngFechaFormatoJul     db    "Ingrese una fecha en formato Juliano (DDD AA) separando con espacios los numeros ej: 218 2020 ",10,0
     formatoInputFechaJul      db    "%hi %hi",0 ;
     
     ;___ msjs informe usuario _____
@@ -110,7 +111,6 @@ section     .data
     ;___
     desplaz                         dw  0
     aux                             dw  0
-    diaAux                          dw  0
 
 section     .bss
     
@@ -383,8 +383,6 @@ ingresoFecha:
         ;como ingreso en Rom y ya pase a Grego (para validar), 
         ;solo me queda pasar a Juliano,
         ;aprovecho la rutina q tengo xa ir de Grego a Rom
-        ; #FALTAAAA
-        ;laburoooo  #aqui
         ;_____GREGORIANO ---> JULIANO
         ;____DIA (Y MES )____
         call             convertirDiaGregoADiaJul
@@ -869,15 +867,10 @@ validarFechaGeneral:
                 ;esta rutina usa el bx, por eso tengo q reptir abajo... 
                 mov         bx,word[desplaz]
                 
-                ;#OJO
-                ;#comentar y cheuqearrr q no rompa el rcxxx
-                mov         rcx,2              ;1) bytes a comparar
-                ;#DUDA SUPEEEER DUDAAAAAA
-                ;#128
+                ;#OJO lo comentado no funciona pero no se porque...
+                ;mov         rcx,2              ;1) bytes a comparar
                 ;lea         rsi,[diaGrego]  
                 ;2) RSI = DIA GREGO
-                ;#AHORA NO ACEPTA MAYORES  127 CON GREGO DIRECTO PERO
-                ;#TESTEARRR
                 sub        rsi,rsi
                 sub        rdi,rdi
                 
@@ -910,136 +903,80 @@ validarFechaGeneral:
                     ret
 
 
-;---------------------------------------------------------------------------------
-;# PRECONDICIONES:
-;Convierte la fecha q este guardada en 
-;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
-;a
-;FORMATO ROMANO en diaRom - mesRom  - anioRom
+;---------------------------------------------------------------------------------------
+;PRECONDICIONES:
+;   -Debe haber un numero gregoriano valido en el registro R12W
+;POSTCONDICIONES:
+;   -Deja en la variable [numeroRomanoArmado] el numero romano correspondiente al
+;numero gregoriano que habia en R12W
+;---------------------------------------------------------------------------------------
 convertirGregoARom:
-    ;bytesSimbolos = BytesNuemeros + posEnVcetores    
+    
     sub rdx,rdx ;ya que el cociente se deposita en RDX:RAX, entonces hay que dejar el rdx vacio
     
-    ;mov     ebx,22   ;contador en vector simbolos romanos
-
-    ;#VER
-    ;OJOOOOOO
-    ;mov      r9w,[anioGrego]   ;r9w = numeroAux (4 bytes)    #OJOOOOO
     mov      word[tamNumeroRomanoArmado],0
-    
-    mov      qword[numeroRomanoArmado],0    
-    ;dejo con 0's el lugar donde voy a escribir el numero romano
+
+    mov      qword[numeroRomanoArmado],0   ;dejo con 0's el lugar donde voy a escribir el numero romano
 
     mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
-
     
     sigDivision:
-    sub     rdx,rdx ;#IMPORTANTISIMOOOOO
+        sub     rdx,rdx ;#IMPORTANTISIMOOOOO
 
-    sub     rbx,rbx ;#quito basura por las dudas
-    mov     ebx,dword[posEnVectoresRomanos]
-    
-    imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
-    mov     r10w,word[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
-
-    ;r9w = numAuxiliar
-    sub     ax,ax   ;#basura
-    mov     ax,r12w   ;AX = r9w = numeroAux dsps de restarle simbolo anterior 
-
-    ;quitar lo de aca abajo
-    ;mov     r10w,500
-    ;mov     cx,500
-
-    idiv    r10w     ;AX = AX/R10W 
-
-    ;idiv    cx     ;AX = AX/R10W 
-    ;cociente = AX = numero de veces a colocar ese simbolo
-    ;sub     rcx,rcx
-    ;mov     cx,ax ;CX = AX = veces a concatenar el simbolo
-    ;ocurre que si el numero es pequenio, las primeras diviones dan 0. 
-    ;chequeo eso
-    ;cwde
-    ;cdqe
-    cmp     ax,0    
-    je      sigSimbolo
-
-    cwde ;muy importante... 
-                               
-    cdqe
-
-    ;#???? OJO REVEER.... no usar cx sino rcx xa loops
-    
-    mov     rcx,rax   ;si resultado de la divi es mayor a 0 entro
-    ;sino, es q la divion dio mayor a 0, y el simbolo se debe ocncatenar al menos 1 vez 
-
-    repeSimbolo:
-
-        ;push rcx ;para no perder el valor del rcx en el loop
+        sub     rbx,rbx ;#quito basura por las dudas
+        mov     ebx,dword[posEnVectoresRomanos]
         
-        push rcx
-        call    concatenarSimbolo   ;
-        pop rcx
+        imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
+        mov     r10w,word[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
 
-        ;mov     rax,0   ;#dejo  0 en rax
-    
-        ;push rcx
-        ;call       imprimirNumeroBien    
-        ;pop rcx
+        ;r12w = numAuxiliar
+        sub     ax,ax 
+        mov     ax,r12w   ;AX = r12w = numeroAux dsps de restarle simbolo anterior 
 
-        sub     r12w,r10w ;numAuxliar - Simbolo
+        ;quitar lo de aca abajo
+        ;mov     r10w,500
+        ;mov     cx,500
+
+        idiv    r10w     ;AX = AX/R10W 
+
+        cmp     ax,0    
+        je      sigSimbolo
+
+        cwde ;muy importante... 
+        cdqe
+
+        mov     rcx,rax   ;si resultado de la divi es mayor a 0 entro
+        ;sino, es q la divion dio mayor a 0, y el simbolo se debe ocncatenar al menos 1 vez 
+
+        repeSimbolo:
+
+            push rcx ;para no perder el valor del rcx en el loop
+            call    concatenarSimbolo   ;
+            pop rcx
+
+            sub     r12w,r10w ;numAuxliar - Simbolo
+
+
+        loop  repeSimbolo
+
         
-        ;ret
-        ;pop rcx
+        sigSimbolo:
+            inc         dword[posEnVectoresRomanos]
 
-        ;push r9
-        ;push r10
-        ;push rcx
-        ;call        unDebugConInt
-        ;pop rcx
-        ;pop r10
-        ;pop r9
+            cmp         r12w,0 ;numAuxliar
+            jg          sigDivision
 
-        ;mov rcx,0
-
-    loop  repeSimbolo
-
-    ;cuando termine con ese simbolo 
-    ;(itere tantas veces como res de la division)
-    ;ya reste el simbolo a AX, pregunto si e queda algo
-    
-    ;mov            word[aux_reg],rax
-    ; mov            rcx,debugConInt
-    ; mov            rdx,r9
-    ; sub            rsp,32
-    ; call            printf
-    ; add             rsp,32
-
-    ;add     ebx,2       ;EBX = POS en vector simbolos romanos
-
-    sigSimbolo:
-        inc         dword[posEnVectoresRomanos]
-
-        cmp         r12w,0 ;numAuxliar
-        jg          sigDivision
-
-    ;push rcx
-    ;call    imprimirNumeroBien
-    ;pop rcx
-    ;si es mayo a 0 voy a la sig division
-
-    ;add     word[tamNumeroRomanoArmado]
-    ;mov     cx,word[tamNumeroRomanoArmado]
-    ;LEA RSI,numeroRomanoArmado
-    ;L;EA RDI,diaRom      
-    ;REP MOVSB  
-
-    ;push rcx
-    ;call    unDebug
-    ;pop rcx
-    
-    
     ret
 
+
+;-------------------------------------------------------------------------------------
+;-> PRECONDICIONES: 
+;   - Requiere un numero de pos valido en [posEnVectoresRomanos]
+;   - Requiere el tamanio del numero armado hasta el momento en [tamNumeroRomanoArmado]
+;-> POSTCONDICIONES: 
+;   -concatena en la variable [numeroRomanoArmado] el simbolo correspondiente
+;a la pos [posEnVectoresRomanos] 
+;-------------------------------------------------------------------------------------
 concatenarSimbolo:
     mov     rcx,2  ;supongo no tiene espacio y copiare los 2 simbolos
     
@@ -1054,7 +991,6 @@ concatenarSimbolo:
     imul    ebx,3
     cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
 
-    ;#DUDA + efectivo??? poniendo predeterminadamente 1 byte y si no tiene, sumo 1 en
     jne      noTieneEspacio    
 
         ;si tiene espacio es q hay un solo simbolo Romano,
@@ -1068,7 +1004,7 @@ concatenarSimbolo:
     LEA RSI,[vecSimbolosRomanos + ebx] 
 
     mov rax,0
-    mov ax,word[tamNumeroRomanoArmado]  ;#NOOOOOOOOOOOOOO: r10 para moverme en numeroRomanoArmado
+    mov ax,word[tamNumeroRomanoArmado]
 
     cwde    ;muy importante... 
 
@@ -1076,21 +1012,8 @@ concatenarSimbolo:
 
     REP MOVSB    
 
-    ;______DEJAR ESTE DEBUG ALGO CORRE Y NO ROMPE____
-    ;#sacar
-    ;push rcx
-    ;push  rdx
-    ;call    imprimirNumero
-    ;pop  rdx
-    ;pop rcx
-    ;_______Debug______
-
-    ;add      ebx,3   ;3 bytes = 2  bytes letras + 0   
-    
     add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
     
-    ;call    unDebug
-
     ret
 
 
@@ -1129,74 +1052,12 @@ unDebugConInt:
 
     ret
 
-otroDebugConInt:
 
-    mov             word[aux],r9w
-    
-    mov            rcx,debugConInt
-    mov            rdx,[aux]
-    sub            rsp,32
-    call            printf
-    add             rsp,32
-
-    ret
-
-imprimirNumero:
-    mov     rcx,numeroRomanoArmado
-    sub		rsp,32
-    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
-    add		rsp,32
-    
-    ret
-
-imprimirNumeroBien:
-
-    mov     rcx,numeroRomanoArmado
-    sub		rsp,32
-    call	printf  ;IMPRIME HASTA QUE ENCUENTRA UN 0
-    add		rsp,32
-
-
-    ret
-
-;copiar numero
-
-;#SACAR
-copiarNumeroRomano:
-;El problema es q yo no cuantos digitos tiene el numero que me ingresoe el usuario
-;entonces no lo puedo copiar "completo"
-    push rcx
-    mov     dword[posEnNumeroRomano],0 ;pongo en cero
-    proxChar:
-        mov     rax,0   ;#saco basura x las dudas
-        mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
-        ;EAX = posEnNumero Romano
-        cwde    ;muy importante... 
-        cmp     byte[numRomAux + eax],0   ;si es 0 termino y ni entro, sino sigo
-        je      finCalcTam
-        
-        ;si no es igual
-        inc     word[posEnNumeroRomano] ;pops + 1
-        jmp     proxChar
-
-    finCalcTam:
-    mov     cx,word[posEnNumeroRomano] 
-    inc     rcx ;bytes a copiar = posNumeroRomano + 1 xq arranca en 0
-        
-    LEA RDI,[simboloRomano] ;lo cargo ahi
-
-    REP MOVSB
-
-    pop rcx
-
-    ;una vez q tengo el tamanio,
-
-
-
-;--------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------------
 ;-> PRECONDICIONES: Requiere un dia, mes y anio guardados en 
 ;[diaGrego] , [mesGrego] y [anioGrego]  
 ;-> POSTCONDICIONES: Deja el numero de dia en [diaJul]
+;-------------------------------------------------------------------------------------
 convertirDiaGregoADiaJul:
 
     mov         word[diaJul],0
@@ -1239,6 +1100,10 @@ convertirDiaGregoADiaJul:
     ret
 
 
+;---------------------------------------------------------------------------------------
+;-> PRECONDICIONES: debe haber un anio en [anioGrego]
+;-> POSTCONDICIONES: deja el anio correspondiente a [anioGrego] en la var [anioJul]
+;---------------------------------------------------------------------------------------
 convertirAnioGregoAAnioJul:
     ;-> PRECONDICIONES: Requiere un anio guardados en [anioGrego]  
     ;-> POSTCONDICIONES: Deja el numero de dia en [diaJul]
@@ -1268,31 +1133,27 @@ convertirAnioGregoAAnioJul:
         ret
 
 
-;-----------------------------------------------------------------------------------
-;Convierte la fecha q este guardada en diaRom mesRom anioRom 
-;a gergoriano y guarda lo nuevos valores en diaGrego - mesGrego - anioGreo
+;---------------------------------------------------------------------------------------
+;PRECONDICIONES: 
+;   -RDX debe contener la LEA (low efective adress) del numeroRomano a convecrtir.
+; ya sea [diaRom] [mesRom] u [anioRom] aunq puede ser otro.
+;POSTCONDICIONES:
+;   - Deja en la variable [numeroGregorianoArmado] el numero gregoriano correspodiente
+;al roano cuya lea estaba em rdx
+;--------------------------------------------------------------------------------------
 convertirRomAGrego:
     
     mov     dword[posEnNumeroRomano],0 ;pongo en cero
-    
-    mov     dword[numeroGregorianoArmado],0
 
-    ;posEnNumRom
+    mov     dword[numeroGregorianoArmado],0
 
     sigCharRom:
         
         mov     rax,0   ;#saco basura x las dudas
-        ;#OJO TAMANIOS
         mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
         ;EAX = posEnNumero Romano
         cwde    ;muy importante... 
-
-        ;#OJO
         cdqe
-
-        ;mov     ebx,0   
-        ;cmp     byte[diaRom + eax],0   ;si es 0 termino y ni entro, sino sigo
-        ;cmp     byte[edx + eax],0   ;si es 0 termino y ni entro, sino sigo
         cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
         je      finLecturaNumRom
 
@@ -1368,14 +1229,6 @@ convertirRomAGrego:
 
         sumarValor:
             add     word[numeroGregorianoArmado],r9w
-
-        ;push rcx
-        ;mov            rcx,debugConInt
-        ;mov            rdx,[numeroGregorianoArmado]
-        ;sub            rsp,32
-        ;call            printf
-        ;add             rsp,32
-        ;pop rcx
                 
         add     dword[posEnNumeroRomano],1   ;pos + 1 
         jmp     sigCharRom 
@@ -1387,11 +1240,14 @@ convertirRomAGrego:
 
     ret
 
+
+;------------------------------------------------------------------------------------
 ;-> PRECONDICIONES: 
-;-RDX debe contener la LEA (low efective adress del numero/ caracyer a copiar)
-;-RAX debe tener el numero de caracter sobre le numero del cual quiero extraer el caracter romano
-;POSTCONDICIONES:
-;-deja en la "variable" [simboloRomano] el cracter que esta en la pos RAX (con respecto a la lea en rdx)
+;   -RDX debe contener la LEA (low efective adress del numero/ caracyer a copiar)
+;   -RAX debe tener el numero de caracter sobre le numero del cual quiero extraer el caracter romano
+;POSTCONDICIONES: deja en la "variable" [simboloRomano] el cracter que esta 
+; en la pos RAX (con respecto a la lea en rdx)
+;------------------------------------------------------------------------------------
 copiarDigitoEnSimboloRomano:
     
     push    rcx
@@ -1411,6 +1267,10 @@ copiarDigitoEnSimboloRomano:
     ret
 
 
+;------------------------------------------------------------------------------------
+;-> PRECONDICIONES: la "variable" [simboloRomano] debe tener un cracter a validar
+;-> POSTCONDICIONES: deja en posEnVectoresRomanos la pos del simbolo posible a sumar
+;------------------------------------------------------------------------------------
 buscarPosCharRom:
     
     mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
@@ -1441,10 +1301,8 @@ buscarPosCharRom:
     
 
 ;--------------------------------------------------------------------------
-;#FALTAAA PRECONDICIONES,
-;-> PRECONDICIONES: debe haber un anio en AnioGrego
-;
-;-> POSTCONDICIONES
+;-> PRECONDICIONES: debe haber un anio en [anioJul]
+;-> POSTCONDICIONES: deja el anio correspondiente a [anioJul] en la var [anioGrego]
 ;--------------------------------------------------------------------------
 convertirAnioJulAAnioGrego:
 
@@ -1465,30 +1323,13 @@ convertirAnioJulAAnioGrego:
 
     ret
 
-
-;Convierte la fecha q este guardada en  
-;FOMRATO JULIANO en diaJul  - anioJul
-;a
-;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
+;--------------------------------------------------------------------------
+;PRECONDICIONES: Debe haber una dia valido en [diaJul]
+;POSTCONDICIONES: Deja el dia y mes correspondientes al dia juliano en
+;[diaGrego] y [mesGregp]
 ;------------------------------------------------------------------------
 convertirDiaJulADiaYMesGrego:
-    ;#sacar
-    ;parece haber una manera matematica de hacerlo preguntando si es bisiesto o no
-    ;y luego por el numero de dia del anio pero no logro encontrarla, 
-    ;#sacar si no desaprueba el tp prefiero dejarlo como lo hice con 
-    ;2 vectores, 1 de bisisetso y otro de no
-    ;def ymd(Y,N):
-    ; given year = Y and day of year = N, return year, month, day
-    ;    Astronomical Algorithms, Jean Meeus, 2d ed, 1998, chap 7     
-    ;if is_leap_year(Y):
-    ;    K = 1
-    ;else:
-    ;    K = 2
-    ;M = int((9 * (K + N)) / 275.0 + 0.98) ;# ?????? 0,98 en asm un float
-    ;if N < 32:
-    ;    M = 1
-    ;D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
-
+    
     mov         word[diaGrego],0
     mov         word[mesGrego],0
 
@@ -1515,7 +1356,7 @@ convertirDiaJulADiaYMesGrego:
         sub     rax,rax            
         mov     ax,word[mesGrego]  ;rax = NumDeMes
 
-        cwde    ;#va????
+        cwde
         imul    eax,2   ;cada ele de vecDiasMesesBisiestos es una word
         sub     rbx,rbx
         mov     bx,[vecDiasMesesBisiestos + eax - 2 ] ; NumDeMes - 2 bytes = NumDeMes - 1mes
@@ -1538,7 +1379,7 @@ convertirDiaJulADiaYMesGrego:
         sub     rax,rax            
         mov     ax,word[mesGrego]  ;rax = NumDeMes
 
-        cwde    ;#va????
+        cwde 
         imul    eax,2   ;cada ele de vecDiasMesesBisiestos es una word
         sub     rbx,rbx
         mov     bx,[vecDiasMeses + eax - 2 ] ; NumDeMes - 2 bytes = NumDeMes - 1mes
@@ -1551,12 +1392,11 @@ convertirDiaJulADiaYMesGrego:
 
         ret
 
-
+;------------------------------------------------------------------------------------
 ;chequea si un año es bisiesto y coloca en la var esBisiesto "S" o "N" 
-;#FALTAAA PRECONDICIONES,
-;-> PRECONDICIONES: debe haber un anio en AnioGrego
-;
-;-> POSTCONDICIONES
+;-> PRECONDICIONES: debe haber un anio valido en AnioGrego
+;-> POSTCONDICIONES: Deja un "S" o una "N" segun corresponda en la variabele [esBisiesto]
+;------------------------------------------------------------------------------------
 anioBisiesto:
     mov 	ax,word[anioGrego]	;AX = ANIO      	
 	sub 	dx,dx				;Limpio DX para dejar el resto
@@ -1570,7 +1410,7 @@ anioBisiesto:
 		Mov 	ax, word[anioGrego]	;AX = ANIO				
         sub 	dx,dx						;Reinicializa el registro DX
         mov 	bx, 4 ;BX = 4
-		div 	bx	; AX/BX = ANIO/ 4 DX = RESTO						        ;Hace la division AX/0004h
+		div 	bx	; AX/BX = ANIO/ 4 DX = RESTO		;Hace la division AX/0004h
         cmp 	dx, 0
 		jne 	marcarNoEsBisiesto						        
 		;(no es divisible ni por 400 ni por 4 noEsBisiesto)
@@ -1606,7 +1446,6 @@ anioBisiesto:
 
     finAnioBisiesto:
         ret
-;---------------------------------------------------------------------
 
 
 
