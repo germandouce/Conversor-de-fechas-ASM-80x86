@@ -12,10 +12,9 @@ ______Contador de tiempo______________________________________________
 + 5hrs 15 min 23/10/2022 (estructura gral del prgrm)
 _______________________________________________
 
+
 QUE FALTA De + importante a - importante
-1)-> Comversor de Dia Jul A Gregoriano
-2)-> crear rutina copiando lo q hay en validacion para convertir 
-anio jul a anio Grego 
+
 3)-> Validar fecha Romana a NIVEL LETRAS (SEA ALGUNA DEL VECTOR)
 creo q no voy a valiar xq no se como que el numero en si sea valido
 4)-> Hacer una rutina q comprenda el conversor de NUMEROS romano - grego y el viceversa

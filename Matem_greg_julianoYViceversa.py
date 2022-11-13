@@ -28,6 +28,6 @@ def ymd(Y,N):
     D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
     return Y, M, D
 
-print(doy(2001,4,5))
+print(doy(2001,2,12))
 
 print(ymd(2004,366))

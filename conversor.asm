@@ -261,7 +261,7 @@ ingresoFecha:
 
         ;_____GREGORIANO ---> ROMANO
         ;_____DIA____
-        mov             r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
+        mov             r12w,word[diaGrego]   ;r9w = diaGregoAux (4 bytes)
         call            convertirGregoARom
 
         mov             cx,word[tamNumeroRomanoArmado]
@@ -270,7 +270,7 @@ ingresoFecha:
         REP     MOVSB     
         
         ;_____MES____
-        mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
+        mov             r12w,word[mesGrego]   ;r9w = mesGregoAux (4 bytes)
         call            convertirGregoARom
 
         mov             cx,word[tamNumeroRomanoArmado]
@@ -279,7 +279,7 @@ ingresoFecha:
         REP     MOVSB 
         
         ;_____ANIO____
-        mov             r9w,[anioGrego]   ;r9w = anioGregoAux
+        mov             r12w,word[anioGrego]   ;r9w = anioGregoAux
         call            convertirGregoARom
         mov             cx,word[tamNumeroRomanoArmado]
         LEA             RSI,[numeroRomanoArmado]
@@ -487,39 +487,31 @@ ingresoFecha:
         ;---------------Meter en una sola rutina si es posible
         ;_____GREGORIANO ---> ROMANO
         ;_____DIA____
-        ; mov             r9w,[diaGrego]   ;r9w = diaGregoAux (4 bytes)
-        ; push rcx
-        ; call            convertirGregoARom
-        ; pop rcx
+        mov             r12w,word[diaGrego]   ;r12w = diaGregoAux (4 bytes)
+        call            convertirGregoARom
 
-        ; mov             cx,word[tamNumeroRomanoArmado]
-        ; LEA             RSI,[numeroRomanoArmado]
-        ; LEA             RDI,[diaRom]      
-        ; REP     MOVSB     
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,[numeroRomanoArmado]
+        LEA             RDI,[diaRom]      
+        REP     MOVSB     
         
-        ; ;_____MES____
-        ; mov             r9w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
+        ;_____MES____
+        mov             r12w,[mesGrego]   ;r9w = mesGregoAux (4 bytes)
+        call            convertirGregoARom
 
-        ; push rcx
-        ; call            convertirGregoARom
-        ; pop rcx
-
-        ; mov             cx,word[tamNumeroRomanoArmado]
-        ; LEA             RSI,[numeroRomanoArmado]
-        ; LEA             RDI,[mesRom]      
-        ; REP     MOVSB 
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,[numeroRomanoArmado]
+        LEA             RDI,[mesRom]      
+        REP     MOVSB 
         
-        ; ;_____ANIO____
-        ; mov             r9w,[anioGrego]   ;r9w = anioGregoAux
+        ;_____ANIO____
+        mov             r12w,[anioGrego]   ;r9w = anioGregoAux
+        call            convertirGregoARom
 
-        ; push rcx
-        ; call            convertirGregoARom
-        ; pop rcx
-
-        ; mov             cx,word[tamNumeroRomanoArmado]
-        ; LEA             RSI,[numeroRomanoArmado]
-        ; LEA             RDI,[anioRom]      
-        ; REP     MOVSB       
+        mov             cx,word[tamNumeroRomanoArmado]
+        LEA             RSI,[numeroRomanoArmado]
+        LEA             RDI,[anioRom]      
+        REP     MOVSB       
     
         ;---------------Meter en una sola rutina si es posible
 
@@ -770,6 +762,7 @@ validarFechaGeneral:
 
 
 ;---------------------------------------------------------------------------------
+;# PRECONDICIONES:
 ;Convierte la fecha q este guardada en 
 ;FORMATO GREGORIANO en diaGrego - mesGrego  - anioGreo  
 ;a
@@ -780,6 +773,7 @@ convertirGregoARom:
     
     ;mov     ebx,22   ;contador en vector simbolos romanos
 
+    ;#VER
     ;OJOOOOOO
     ;mov      r9w,[anioGrego]   ;r9w = numeroAux (4 bytes)    #OJOOOOO
     mov      word[tamNumeroRomanoArmado],0
@@ -789,6 +783,7 @@ convertirGregoARom:
 
     mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
 
+    
     sigDivision:
     sub     rdx,rdx ;#IMPORTANTISIMOOOOO
 
@@ -796,17 +791,18 @@ convertirGregoARom:
     mov     ebx,dword[posEnVectoresRomanos]
     
     imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
-    mov     r10w,[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
+    mov     r10w,word[vecValoresRomanos + ebx]  ;r10w = ValorSimboloRomano
 
     ;r9w = numAuxiliar
     sub     ax,ax   ;#basura
-    mov     ax,r9w   ;AX = r9w = numeroAux dsps de restarle simbolo anterior 
+    mov     ax,r12w   ;AX = r9w = numeroAux dsps de restarle simbolo anterior 
 
     ;quitar lo de aca abajo
     ;mov     r10w,500
     ;mov     cx,500
-    
+
     idiv    r10w     ;AX = AX/R10W 
+
     ;idiv    cx     ;AX = AX/R10W 
     ;cociente = AX = numero de veces a colocar ese simbolo
     ;sub     rcx,rcx
@@ -817,12 +813,20 @@ convertirGregoARom:
     ;cdqe
     cmp     ax,0    
     je      sigSimbolo
+
+    cwde ;muy importante... 
+                               
+    cdqe
+
+    ;#???? OJO REVEER.... no usar cx sino rcx xa loops
     
-    mov     cx,ax   ;si resultado de la divi es mayor a 0 entro
+    mov     rcx,rax   ;si resultado de la divi es mayor a 0 entro
     ;sino, es q la divion dio mayor a 0, y el simbolo se debe ocncatenar al menos 1 vez 
+
     repeSimbolo:
-        
+
         ;push rcx ;para no perder el valor del rcx en el loop
+        
         push rcx
         call    concatenarSimbolo   ;
         pop rcx
@@ -833,9 +837,20 @@ convertirGregoARom:
         ;call       imprimirNumeroBien    
         ;pop rcx
 
-        sub     r9w,r10w ;numAuxliar - Simbolo
+        sub     r12w,r10w ;numAuxliar - Simbolo
+        
         ;ret
         ;pop rcx
+
+        ;push r9
+        ;push r10
+        ;push rcx
+        ;call        unDebugConInt
+        ;pop rcx
+        ;pop r10
+        ;pop r9
+
+        ;mov rcx,0
 
     loop  repeSimbolo
 
@@ -855,7 +870,7 @@ convertirGregoARom:
     sigSimbolo:
         inc         dword[posEnVectoresRomanos]
 
-        cmp         r9w,0 ;numAuxliar
+        cmp         r12w,0 ;numAuxliar
         jg          sigDivision
 
     ;push rcx
@@ -872,6 +887,7 @@ convertirGregoARom:
     ;push rcx
     ;call    unDebug
     ;pop rcx
+    
     
     ret
 
@@ -931,23 +947,36 @@ concatenarSimbolo:
 
 
 unDebug:
-
+    push rcx
+    push rax
+    push rdx
     mov             rcx,debug
     sub             rsp,32
     call            printf
     add             rsp,32
-
+    pop rdx
+    pop rax
+    pop rcx
+    
     ret
 
 unDebugConInt:
 
-    ;mov             word[aux],rax
-    
+    ;push rcx
+    push rax
+    push rdx
+    push rcx
+    mov            word[aux],cx
+
     mov            rcx,debugConInt
     mov            rdx,[aux]
     sub            rsp,32
     call            printf
     add             rsp,32
+    pop rcx
+    pop rdx
+    pop rax
+    ;pop rcx
 
     ret
 
