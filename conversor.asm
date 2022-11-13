@@ -39,10 +39,10 @@ section     .data
     formatoInputFechaGrego    db  "%hi %hi %hi" ;hi (16 bits, 2 bytes 1 word)
     ;garantizo que se pisa en cada nuevo ingreso,
 
-    msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD/MM/AAAA)",10,0
+    msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD MM AAAA)",10,0
     formatoInputFechaRom      db "%s %s %s",0 ;%s string
 
-    msjIngFechaFormatoJul     db    "Ingrese una fecha en formato Juliano (DDD/AA)",10,0
+    msjIngFechaFormatoJul     db    "Ingrese una fecha en formato Juliano (DDD AA)",10,0
     formatoInputFechaJul      db    "%hi %hi",0 ;
     
     ;___ msjs informe usuario _____
@@ -52,10 +52,18 @@ section     .data
     msjInformeFechaJul          db "Fecha en formato Juliano: %hi/%hi",10,0
 
     ;___Mensajes de error ___
-    espacio                     db  "",10
-    msjErrorValidarFechaGeneral db  "LA FECHA INGRESADA NO ES VALIDA.",10,10,0
-    alertaAnioBisiesto          db  "El anio ingresado ES BISIESTO",10,0
-    alertaAnioNoBisiesto        db  "El anio ingresado NO es bisiesto",10,0
+    espacio                     db  "",10,0
+    
+    msjErrorValidarAnioGeneral  db  "EL ANIO INGRESADO NO ES VALIDO.",10,10,0
+    msjErrorValidarMesGeneral   db  "EL MES INGRESADO NO ES VALIDO.",10,10,0
+    msjErrorValidarDiaGeneral   db  "EL DIA INGRESADO NO ES VALIDO.",10,10,0
+
+    msjErrorValidarAnioRomano   db  "el ANIO ROMANO ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarMesRomano    db  "el MES ROMANO ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarDiaRomano    db  "el DIA ROMANO ingresado NO ES VALIDO.",10,10,0
+
+    alertaAnioBisiesto          db  "El anio ingresado ES BISIESTO",10,10,0
+    alertaAnioNoBisiesto        db  "El anio ingresado NO es bisiesto",10,10,0
 
     ;__vectores__
     vecDiasMeses                dw  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -407,7 +415,7 @@ ingresoFecha:
             sub     r15,r15 ;lo dejo vacio por las dudas...     
             
             cmp		rax,3      
-            jne		finValidarFechaGrego
+            jne		finValidarFechaRom
             
             ;#DUDA debo validar que la fecha sea valida en romano con simbolos
             ; x ahora noooooo
@@ -415,44 +423,94 @@ ingresoFecha:
             ;___validar anio___
             call        validarAnioRom
             cmp		    byte[fechaEsValida],"N" ;Letras son correctas
-            je		    finValidarFechaRom
+            je		    errorValidarAnioRomano
                         
             ;___validar mes___ 
             call        validarMesRom   ;Letras con correctas
             cmp		    byte[fechaEsValida],"N"	
-            je		    finValidarFechaRom
+            je		    errorValidarMesRomano
 
             ;___validar dia___
             call        validarDiaRom ;letras son correctas 
-            ;cmp		byte[fechaEsValida],"N"	
-            ;je		    finValidarFechaRom
+            cmp		    byte[fechaEsValida],"N"	
+            je		    errorValidarDiaRomano
             
             finValidarFechaRom:
 
-            
                 ret
+
+            errorValidarAnioRomano:
+                mov             rcx, espacio
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                mov             rcx, msjErrorValidarAnioRomano
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                jmp             finValidarFechaRom             
+            
+            errorValidarMesRomano:
+
+                mov             rcx, espacio
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                mov             rcx, msjErrorValidarMesRomano
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+                jmp             finValidarFechaRom  
+
+            errorValidarDiaRomano:
+
+                mov             rcx, espacio
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                mov             rcx, msjErrorValidarDiaRomano
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+                jmp             finValidarFechaRom
 
             validarAnioRom:
                 mov         byte[fechaEsValida],"N"
-                ;Valido letras con tabla
-                ;jg
                 
-                mov     byte[fechaEsValida],"S"    
-                finValidarAnioRom:
-                    ret
-            
+                sub     rdx,rdx ;saco basura
+                LEA     rdx,[anioRom]
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
+                call        validarCaracteresRomanos
+                ;Valido letras con tabla. 
+                ;dejo una s en [fechaEsValida] si todos los caracteres son validos.
+                ;caso contrario dejo una N
+                
+                ret
+
             validarMesRom: 
                 mov         byte[fechaEsValida],"N"
                 ;valido letras con tabla
                 
-                mov     byte[fechaEsValida],"S"
+                sub     rdx,rdx ;saco basura
+                LEA     rdx,[mesRom]
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
+                call        validarCaracteresRomanos
+                
                 finValidarMesRom:
                     ret
             
             validarDiaRom:
                 mov         byte[fechaEsValida],"N" 
-                ;valido letras con tablas
-                mov     byte[fechaEsValida],"S"
+                
+                sub     rdx,rdx ;saco basura
+                LEA     rdx,[diaRom]
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
+                call        validarCaracteresRomanos
+
                 finValidarDiaRom:
                     ret
 
@@ -549,11 +607,11 @@ ingresoFecha:
             finValidarFechaJul:
                 ret
             ErrorValidarFechaJul:
-                mov             rcx, espacio
-                mov             rdx, msjErrorValidarFechaGeneral    ;#cambiar
-                sub             rsp,32
-                call            printf
-                add             rsp,32
+                ;mov             rcx, espacio
+                ;mov             rdx, msjErrorValidarFechaGeneral    ;#cambiar
+                ;sub             rsp,32
+                ;call            printf
+                ;add             rsp,32
                 
                 jmp             finValidarFechaJul
 
@@ -599,12 +657,6 @@ ingresoFecha:
     
 
     finIngresoFecha:
-        
-        mov             rcx, debug
-        sub             rsp,32
-        call            printf
-        add             rsp,32 
-        
 
         ret
 
@@ -638,36 +690,132 @@ mostrarConversiones:
 
 
 ;------------------------- Rutinas se usan varias veces ---------------------
+
+;PRECONDICIONES: Debe haber un ingreso de string valido en ...?
+;
+;POSTCONDICIONES:
+validarCaracteresRomanos:
+    
+    mov     dword[posEnNumeroRomano],0 ;pongo en cero
+    
+    sigCharNumRomVal:
+
+        mov     rax,0   ;#saco basura x las dudas
+        ;#OJO TAMANIOS
+        mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
+        ;EAX = posEnNumero Romano
+        cwde    ;muy importante... 
+        ;#OJO
+        cdqe
+        cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
+        je      finValidarNumeroRom
+
+        push rcx
+        call    copiarDigitoEnSimboloRomano
+        pop rcx
+
+        mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
+    
+        proxCharEnVecSimbolosRomanos:
+
+            LEA     RSI,[simboloRomano]   ;dejo en el rsi el simbolo
+
+            mov     rcx,1   ;bytes a comparar, siempre uno a la vez
+            
+            sub     ebx,ebx ;#quito basura por las dudas
+            mov     ebx,dword[posEnVectoresRomanos]
+            imul    ebx,2   ;xq son de 2 bytes cada "elemento " (Letra + el 0)
+
+            LEA     RDI,[vecSimbolosRomanosSimple + ebx ]
+            
+            REPE    CMPSB        ;comparo si el simbolo del nuemro es igual al del vector
+
+            je      elCarcaterEsValido
+            ;si no es igual, sumo 1 pos. Si es igual salto y dejo una S en 
+            ;[fechaEsValida]
+            inc     dword[posEnVectoresRomanos] ;sig letra o par de letras
+
+            cmp      dword[posEnVectoresRomanos],7  
+            ;comparo con la pos 7, aca ya termino el vector
+            ;si llegue a 7 es q el caracter no era valido
+            je      elCarcaterNoEsValido
+            
+            jmp    proxCharEnVecSimbolosRomanos
+
+    elCarcaterEsValido:
+        mov     byte[fechaEsValida],"S"
+        inc     dword[posEnNumeroRomano]
+        ;sig caracter en numero a validar
+        jmp     sigCharNumRomVal
+
+    elCarcaterNoEsValido:
+        mov     byte[fechaEsValida],"N"
+
+    finValidarNumeroRom:
+        ret
+
+
+
 ;Rutina para validar un fecha en formato gregoriano
 validarFechaGeneral:
-
-            ;[fechaEsValida],"N"
 
             ;___validar anio___
             call        validarAnioGrego
             cmp		    byte[fechaEsValida],"N" ;esta entre 1950 y 2049
-            je		    ErrorValidarFechaGeneral
+            je		    ErrorValidarAnioGeneral
                         
             ;___validar mes___ 
             ;esta entre 1 y 31
             call        validarMesGrego   ;guarda la pos en el vector de meses para porx validacion     
             cmp		    byte[fechaEsValida],"N"	
-            je		    ErrorValidarFechaGeneral
+            je		    ErrorValidarMesGeneral
 
             ;___validar dia___
             call        validarDiaGrego
             cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
-            je		    ErrorValidarFechaGeneral
+            je		    ErrorValidarDiaGeneral
 
             finvalidarFechaGeneral:
                 ret
-            ErrorValidarFechaGeneral:
+
+            ErrorValidarAnioGeneral:
                 mov             rcx, espacio
-                mov             rdx, msjErrorValidarFechaGeneral
                 sub             rsp,32
                 call            printf
                 add             rsp,32
+
+                mov             rcx, msjErrorValidarAnioGeneral
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
                 jmp             finvalidarFechaGeneral             
+            
+            ErrorValidarMesGeneral:
+
+                mov             rcx, espacio
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                mov             rcx, msjErrorValidarMesGeneral
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+                jmp             finvalidarFechaGeneral  
+
+            ErrorValidarDiaGeneral:
+
+                mov             rcx, espacio
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+
+                mov             rcx, msjErrorValidarDiaGeneral
+                sub             rsp,32
+                call            printf
+                add             rsp,32
+                jmp             finvalidarFechaGeneral
 
             validarAnioGrego:
                 ;entre 1950 y 2049
@@ -679,11 +827,12 @@ validarFechaGeneral:
                 ;cmp        r10,word[anioGrego] ;OJO CAMBIAR EL JUmp por jl
                 cmp         word[anioGrego],2050
                 jge         finValidarAnioGrego
-                
+
                 cmp         word[anioGrego],1949
                 jle         finValidarAnioGrego
                 
                 mov         byte[fechaEsValida],"S"    
+                
                 finValidarAnioGrego:
                     ret
             
@@ -1238,6 +1387,11 @@ convertirRomAGrego:
 
     ret
 
+;-> PRECONDICIONES: 
+;-RDX debe contener la LEA (low efective adress del numero/ caracyer a copiar)
+;-RAX debe tener el numero de caracter sobre le numero del cual quiero extraer el caracter romano
+;POSTCONDICIONES:
+;-deja en la "variable" [simboloRomano] el cracter que esta en la pos RAX (con respecto a la lea en rdx)
 copiarDigitoEnSimboloRomano:
     
     push    rcx
@@ -1272,7 +1426,7 @@ buscarPosCharRom:
 
         LEA     RDI,[vecSimbolosRomanosSimple + ebx ]
         
-        REPE    CMPSB        ;comparo si el simbolo del nuemro es igual al del vecto
+        REPE    CMPSB        ;comparo si el simbolo del nuemro es igual al del vector
 
         je      finBuscarPosChar
         ;si no es igual, sumo 1 pos. Si es igual salto y
