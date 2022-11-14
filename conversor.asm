@@ -9,9 +9,9 @@
 ; - Formato Romano: XIV / X / MMXX
 ; - Formato Juliano (DDD/AA): 288/20
 ;****************************************************************************************************
-;Comentarios y suposiciones del enunciado:
-;-> Por homogeneidad, restringir previamente el ingreso en cualquier 
-;formato de fecha al rango [1950,2049] 
+;COMENTARIOS Y SUPOSICIONES DEL ENUNCIADO
+;-> Por homogeneidad, se restringio previamente el ingreso en cualquier 
+;formato de fecha al rango [1950,2049] (lo valida)
 ;
 ;
 
@@ -21,15 +21,6 @@ extern sscanf
 extern gets
 
 section     .data
-
-    ;para debugeo___
-    debug                       db  "debug",10,10,0
-    debugConChar                db "este es el char: %s",10,0
-    formatoChar                 db "%s",10,0
-    debugConInt                 db  "esta es el numero %hi",10,10,0
-    debugConInts                db "dia %hi y mes: %hi",10,0
-    formatoNum                  db " este es el numero: %hi %hi",10,0
-    ;____
 
     ;____ msjs ingresos usuario con formatos ___
     msjIngFormatoFecha          db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
@@ -41,7 +32,7 @@ section     .data
     msjIngFechaFormatoRom       db  "Ingrese una fecha en formato romano (DD MM AAAA) separando con espacios los numeros ej: XIV X MMXX",10,0
     formatoInputFechaRom        db  "%s %s %s",0 ;%s string
 
-    msjIngFechaFormatoJul       db  "Ingrese una fecha en formato Juliano (DDD AA) separando con espacios los numeros ej: 218 2020 ",10,0
+    msjIngFechaFormatoJul       db  "Ingrese una fecha en formato Juliano (DDD AA) separando con espacios los numeros ej: 218 20",10,0
     formatoInputFechaJul        db  "%hi %hi",0 
     
     ;___ msjs informe usuario _____
@@ -760,8 +751,6 @@ validarCaracteresRomanos:
 ;-> POSTCONDICIONES:
 ;   - Valida que sea una fecha valida (numeros de dias de cada mes, numeros de meses,
 ;numeros de años)
-;-> #ACLARACION: Por cuestiones de homogeneidad se restringio el ingreso 
-;de fechas en cualquier formato al rango de fechas [1950, 2049]
 ;------------------------------------------------------------------
 ;Rutina para validar un fecha en formato gregoriano
 validarFechaGeneral:
@@ -1070,8 +1059,6 @@ convertirDiaGregoADiaJul:
 ;---------------------------------------------------------------------------------------
 ;-> PRECONDICIONES: debe haber un anio en [anioGrego]
 ;-> POSTCONDICIONES: deja el anio correspondiente a [anioGrego] en la var [anioJul]
-;-> #ACLARACION: Por homogeneidad, restringir previamente el ingreso en cualquier 
-    ;formato de fecha al rango [1950,2049] 
 ;---------------------------------------------------------------------------------------
 convertirAnioGregoAAnioJul:
     
