@@ -22,49 +22,48 @@ extern gets
 
 section     .data
 
-    ;para debugeo___
-    debug                       db  "debug",10,10,0
-    debugConChar                db "este es el char: %s",10,0
-    formatoChar                 db "%s",10,0
-    debugConInt                 db  "esta es el numero %hi",10,10,0
-    debugConInts                db "dia %hi y mes: %hi",10,0
-    formatoNum                  db " este es el numero: %hi %hi",10,0
-    ;____
+    debug                     db  "debug",10,10,0
+    tiene                     db  "tiene espacio",10,10,0
+    
+    debugConChar              db "este es el char: %s",10,0
+    formatoChar               db "%s",10,0
+    debugConInt               db  "esta es el numero %hi",10,10,0
+    debugConInts              db "dia %hi y mes: %hi",10,0
+    formatoNum                db " este es el numero: %hi %hi",10,0
 
     ;____ msjs ingresos usuario con formatos ___
-    msjIngFormatoFecha          db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
-    formatoCaracterIndicFecha   db  "%hi"
+    msjIngFormatoFecha        db  "Indique el formato de la fecha que desea convertir (1-gregoriano 2-romano 3-juliano)",10,0
+    formatoCaracterIndicFecha db  "%hi"
     
-    msjIngFechaFormatoGrego     db  "Ingrese una fecha en formato gregoriano (DD MM AAAA) separando con espacios los numeros ej: 14 10 2020",10,0
-    formatoInputFechaGrego      db  "%hi %hi %hi" ;hi (16 bits, 2 bytes 1 word)
+    msjIngFechaFormatoGrego   db  "Ingrese una fecha en formato gregoriano (DD MM AAAA) separando con espacios los numeros ej: 14 10 2020",10,0
+    formatoInputFechaGrego    db  "%hi %hi %hi" ;hi (16 bits, 2 bytes 1 word)
+    ;garantizo que se pisa en cada nuevo ingreso,
 
-    msjIngFechaFormatoRom       db  "Ingrese una fecha en formato romano (DD MM AAAA) separando con espacios los numeros ej: XIV X MMXX",10,0
-    formatoInputFechaRom        db  "%s %s %s",0 ;%s string
+    msjIngFechaFormatoRom     db  "Ingrese una fecha en formato romano (DD MM AAAA) separando con espacios los numeros ej: IX X MMXX",10,0
+    formatoInputFechaRom      db "%s %s %s",0 ;%s string
 
-    msjIngFechaFormatoJul       db  "Ingrese una fecha en formato Juliano (DDD AA) separando con espacios los numeros ej: 218 2020 ",10,0
-    formatoInputFechaJul        db  "%hi %hi",0 
+    msjIngFechaFormatoJul     db    "Ingrese una fecha en formato Juliano (DDD AA) separando con espacios los numeros ej: 218 2020 ",10,0
+    formatoInputFechaJul      db    "%hi %hi",0 ;
     
     ;___ msjs informe usuario _____
-    msjInformeFechaGrego        db  "Fecha en formato Gregoriano: %hi/%hi/%hi",10,0
-    msjInformeFechaRom          db  "Fecha en formato Romano: %s/%s/%s",10,0
-    msjInformeFechaJul          db  "Fecha en formato Juliano: %hi/%hi",10,0
 
-    ;___Mensajes de error y alerta___
+    msjInformeFechaGrego        db "Fecha en formato Gregoriano: %hi/%hi/%hi",10,0
+    msjInformeFechaRom          db "Fecha en formato Romano: %s/%s/%s",10,0
+    msjInformeFechaJul          db "Fecha en formato Juliano: %hi/%hi",10,0
+
+    ;___Mensajes de error ___
     espacio                     db  "",10,0
     
-    msjErrorValidarAnioGeneral  db  "El ANIO ingresado NO ES VALIDO.",10,10,0
-    msjErrorValidarMesGeneral   db  "El MES ingresado NO ES VALIDO.",10,10,0
-    msjErrorValidarDiaGeneral   db  "El DIA ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarAnioGeneral  db  "EL ANIO INGRESADO NO ES VALIDO.",10,10,0
+    msjErrorValidarMesGeneral   db  "EL MES INGRESADO NO ES VALIDO.",10,10,0
+    msjErrorValidarDiaGeneral   db  "EL DIA INGRESADO NO ES VALIDO.",10,10,0
 
-    msjErrorValidarAnioRomano   db  "El ANIO ROMANO ingresado NO ES VALIDO.",10,10,0
-    msjErrorValidarMesRomano    db  "El MES ROMANO ingresado NO ES VALIDO.",10,10,0
-    msjErrorValidarDiaRomano    db  "El DIA ROMANO ingresado NO ES VALIDO.",10,10,0
-
-    msjErrorValidarAnioJuliano  db  "El ANIO JULIANO ingresado NO ES VALIDO.",10,10,0
-    msjErrorValidarDiaJuliano   db  "El DIA JULIANO ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarAnioRomano   db  "el ANIO ROMANO ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarMesRomano    db  "el MES ROMANO ingresado NO ES VALIDO.",10,10,0
+    msjErrorValidarDiaRomano    db  "el DIA ROMANO ingresado NO ES VALIDO.",10,10,0
 
     alertaAnioBisiesto          db  "El anio ingresado ES BISIESTO",10,10,0
-    alertaAnioNoBisiesto        db  "El anio ingresado NO ES BISIESTO",10,10,0
+    alertaAnioNoBisiesto        db  "El anio ingresado NO es bisiesto",10,10,0
 
     ;__vectores__
     vecDiasMeses                dw  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -84,7 +83,15 @@ section     .data
                                 db  "IV",0
                                 db  "I ",0
 
+    ;vecOrigin                   db  "1234",0
+
     vecValoresRomanos           dw  1000, 900, 500, 400,100, 90, 50, 40,10, 9, 5, 4, 1
+
+    posEnVectoresRomanos        dd  0   ;para facilitar cuentas al moverme en vectores    
+    
+    tamNumeroRomanoArmado       dw  0
+
+    posEnNumeroRomano           dd  0
 
     vecSimbolosRomanosSimple    db  "M",0 
                                 db  "D",0
@@ -96,30 +103,25 @@ section     .data
 
     vecValoresRomanosSimple     dw  1000, 500, 100, 50, 10, 5, 1                                
 
-    posEnVectoresRomanos        dd  0   ;es una dword, para facilitar cuentas al moverme en vectores    
-    
-    tamNumeroRomanoArmado       dw  0
-
-    posEnNumeroRomano           dd  0
-
     numeroGregorianoArmado      dw  0
 
     numeroDiaJuliano            dw  0
 
-    ;___Auxiliares___
-    desplaz                     dw  0
-
+    ;___
+    desplaz                         dw  0
+    aux                             dw  0
 
 section     .bss
+    
+    ;___auxiliares__
+    aux_reg                     resw    1
+    contadorRcx                 resq    1
+    
+    simboloRomano               resw    1
+    numRomAux                   resb    100
 
-    ;indicadores de validez
-    esValido                    resb    1 ;'S' - Si 'N'- No
-    fechaEsValida               resb    1 ;'S' - Si 'N'- No
-    esBisiesto                  resb    1 ;'S' - Si 'N'- No
-
-    ;auxiliares xa conversion a romano
-    simboloRomano               resb    1
-    numeroRomanoArmado          resb    100  
+    numeroRomanoArmado          resb    100
+    vecDestiny                  resb    100    
 
     ;gregoriano DD/MM/AAAA
     strInputFechaGrego          resb    100 ;
@@ -129,14 +131,19 @@ section     .bss
 
     ;Romano DD/MM/AAAA pero con I X etc
     strInputFechaRom            resb    100 ;
-    diaRom                      resd    3 
+    diaRom                      resd    3 ; 12bytes MCMLXXXVIII 1988
     mesRom                      resd    3 
-    anioRom                     resd    3 ;12bytes MCMLXXXVIII 1988
+    anioRom                     resd    3
 
     ;Juliano DDD/ AA
     strInputFechaJul            resb    100 ;
     diaJul                      resw    1 ; 2bytes 
     anioJul                     resw    1
+
+    ;indicadores de validez
+    esValido                    resb    1 ;'S' - Si 'N'- No
+    fechaEsValida               resb    1 ;'S' - Si 'N'- No
+    esBisiesto                  resb    1
 
     ;caracter indicador de fecha
     strCaracterFormatoFecha     resb    64
@@ -146,22 +153,38 @@ section     .bss
 section     .text
 
 main:
+    mov rbp, rsp; for correct debugging
+
+    ;#DUDA el resto de flags en no? o reseto en cada vuelta del program??
+    ;calll          resetarFlags ;todo en no?
 
     call            ingresoFormatoFecha
- 
+    ;activa flags de formatos permirmitidos segun el ingreso
+    ;ingresoJull "s"    ingresRom "s" ingreso Grego "s"
     call            ingresoFecha
     
-    call            mostrarConversiones
+    ;#VER
+    ;call           menuFormatoAConvertir   
+    ;pregunto por los flags ;ingresoJull "s"  ingresRom "s" ingreso Grego "s"
+    ;y tengo 3 menues ; menu Ingreso Rom (convierte a 1 los otros 2 etc)
+    ;segun eleccion prendo flags mostrar converisiones
+    ;mostrarRom "s", mostrarJul "S", mostrarGreo "S"
+    ;#DUDA el resto en no? o reseto en cada vuelta del program??
     
+    ;call           rutinaConversora        
+    ;pregunta x cada flag y convierte segun corresponda
+
+    call            mostrarConversiones
+    ;pregunta x cada flag ;mostrarRom "s", mostrarJul "S", mostrarGreo "S" 
+    ;y muestra solo lo pedido
+
+    ;podria haber un loop q pregunte si se quiere ingresar otro numero
+    ;o terminar el programa
+
     finPrgm:
 
 ret
 
-;---------------------------------------------------------------------------------------
-;-> PRECONDICIONES: Muestra un mensaje ofreciendo los tipos de formatos posibles
-;-> POSTCONDICIONES: Valida si el ingreso es valido  y guarda
-;el ingreso en [caracterFormatoFecha]
-;---------------------------------------------------------------------------------------
 ingresoFormatoFecha:
 
     mov             rcx, msjIngFormatoFecha
@@ -206,14 +229,10 @@ ingresoFormatoFecha:
 
 
 ;---------------------------------------------------------------------------------------
-;PRECONDICIONES: Permite el ingreso de fechas cada una en el formato que corresponda
-; luego validando las mismas
-;POSTCONDICIONES: Deja guardada la fecha en una de las siguientes 3 opciones
-;[diaGrego] [mesGrego] [anioGrego]
-;[diaRom]   [mesRom]   [anioRom]
-;[diaJul]   [mesJul]   [anioJul]
-;segun corresponda y luego llama a las rutinas para realizar las conversiones a los 2
-;formato que quedan
+;PRECONDICIONES:
+;   - #FALTA
+;POSTCONDICIONES:
+;    - #FALTA
 ;---------------------------------------------------------------------------------------
 ingresoFecha:   
 
@@ -400,6 +419,9 @@ ingresoFecha:
             
             cmp		rax,3      
             jne		finValidarFechaRom
+            
+            ;#DUDA debo validar que la fecha sea valida en romano con simbolos
+            ; x ahora noooooo
 
             ;___validar anio___
             call        validarAnioRom
@@ -464,6 +486,7 @@ ingresoFecha:
                 
                 sub     rdx,rdx ;saco basura
                 LEA     rdx,[anioRom]
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
                 call        validarCaracteresRomanos
                 ;Valido letras con tabla. 
                 ;dejo una s en [fechaEsValida] si todos los caracteres son validos.
@@ -477,7 +500,8 @@ ingresoFecha:
                 
                 sub     rdx,rdx ;saco basura
                 LEA     rdx,[mesRom]
-                call    validarCaracteresRomanos
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
+                call        validarCaracteresRomanos
                 
                 finValidarMesRom:
                     ret
@@ -487,7 +511,8 @@ ingresoFecha:
                 
                 sub     rdx,rdx ;saco basura
                 LEA     rdx,[diaRom]
-                call    validarCaracteresRomanos
+                ;#copiar precondiciones de convertirRomAGrego y coparSimboloRomano
+                call        validarCaracteresRomanos
 
                 finValidarDiaRom:
                     ret
@@ -512,13 +537,15 @@ ingresoFecha:
         ;call            convertirAnioJulAAnioGrego
         ;No es necesario porque al validar el dia juliano
         ;ya valide que 366 no pueda ser valido en un anio no bisiesto
-        ;y en ese moemento converti la fecha juliana ingresada a gregoriana
         
         call            convertirDiaJulADiaYMesGrego
         
         ;como ya tengo los dias, meses y anioos, 
         ;aprovecho la rutina que tengo
+        ;#OJO REQUIERE FECHA EN DIA MES ANIO ROM
+        ;#FALTAN PRECONDICIONES
 
+        ;---------------Meter en una sola rutina si es posible
         ;_____GREGORIANO ---> ROMANO
         ;_____DIA____
         mov             r12w,word[diaGrego]   ;r12w = diaGregoAux (4 bytes)
@@ -572,41 +599,25 @@ ingresoFecha:
             ;___validar anio___
             call        validarAnioJul
             cmp		    byte[fechaEsValida],"N" ;0 a 50
-            je		    ErrorValidarAnioJuliano
+            je		    ErrorValidarFechaJul
 
             ;___validar dia___
             call        validarDiaJul ;1 a 365
             cmp		byte[fechaEsValida],"N"	
-            je		    ErrorValidarDiaJul
+            je		    ErrorValidarFechaJul
 
 
             finValidarFechaJul:
                 ret
-            ErrorValidarAnioJuliano:
-                mov             rcx,espacio
-                sub             rsp,32
-                call            printf
-                add             rsp,32
-
-                mov             rcx, msjErrorValidarAnioJuliano
-                sub             rsp,32
-                call            printf
-                add             rsp,32
+            ErrorValidarFechaJul:
+                ;mov             rcx, espacio
+                ;mov             rdx, msjErrorValidarFechaGeneral    ;#cambiar
+                ;sub             rsp,32
+                ;call            printf
+                ;add             rsp,32
                 
                 jmp             finValidarFechaJul
 
-            ErrorValidarDiaJul:
-                mov             rcx,espacio
-                sub             rsp,32
-                call            printf
-                add             rsp,32
-                
-                mov             rcx, msjErrorValidarDiaJuliano
-                sub             rsp,32
-                call            printf
-                add             rsp,32
-                
-                jmp             finValidarFechaJul
 
             validarAnioJul:
                 cmp         word[anioJul],99 ;puede ser 49 50 o 99
@@ -653,11 +664,6 @@ ingresoFecha:
         ret
 
 
-;PRECONDICIONES: Debe haber un dia, mes y anio valido en todas las sig variables
-;[diaGrego] [mesGrego] [anioGrego]
-;[diaRom]   [mesRom]   [anioRom]
-;[diaJul]   [mesJul]   [anioJul]
-;POSTCONDICIONES: Muestra los resultados de las conversiones
 mostrarConversiones:
 
     mov             rcx, msjInformeFechaGrego
@@ -686,13 +692,12 @@ mostrarConversiones:
     ret
 
 
+;------------------------- Rutinas se usan varias veces ---------------------
 ;---------------------------------------------------------------------------------------
-;PRECONDICIONES :
-;   -RDX debe contener la LEA (low efective adress) del numeroRomano a validar.
-; ya sea [diaRom] [mesRom] u [anioRom] aunq puede ser otro.
+;PRECONDICIONES:
+;   - #FALTA
 ;POSTCONDICIONES:
-;   - Deja en la variable [fechaEsValida] una "S" si el numero cuya lea estaba era
-;valido y una "N" en caso contrario
+;    - #FALTA
 ;---------------------------------------------------------------------------------------
 validarCaracteresRomanos:
     
@@ -700,10 +705,12 @@ validarCaracteresRomanos:
     
     sigCharNumRomVal:
 
-        mov     rax,0   ;saco basura x las dudas
+        mov     rax,0   ;#saco basura x las dudas
+        ;#OJO TAMANIOS
         mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
         ;EAX = posEnNumero Romano
         cwde    ;muy importante... 
+        ;#OJO
         cdqe
         cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
         je      finValidarNumeroRom
@@ -716,11 +723,11 @@ validarCaracteresRomanos:
     
         proxCharEnVecSimbolosRomanos:
 
-            LEA     RSI,byte[simboloRomano]   ;dejo en el rsi el simbolo
+            LEA     RSI,[simboloRomano]   ;dejo en el rsi el simbolo
 
             mov     rcx,1   ;bytes a comparar, siempre uno a la vez
             
-            sub     ebx,ebx ;quito basura por las dudas
+            sub     ebx,ebx ;#quito basura por las dudas
             mov     ebx,dword[posEnVectoresRomanos]
             imul    ebx,2   ;xq son de 2 bytes cada "elemento " (Letra + el 0)
 
@@ -754,15 +761,11 @@ validarCaracteresRomanos:
 
 
 ;---------------------------------------------------------------------------------------
-;-> PRECONDICIONES :
-;   -Debe haber un dia, mes y anio valido en.
-;[diaRom] [mesRom] u [anioRom] 
-;-> POSTCONDICIONES:
-;   - Valida que sea una fecha valida (numeros de dias de cada mes, numeros de meses,
-;numeros de años)
-;-> #ACLARACION: Por cuestiones de homogeneidad se restringio el ingreso 
-;de fechas en cualquier formato al rango de fechas [1950, 2049]
-;------------------------------------------------------------------
+;PRECONDICIONES:
+;   - #FALTA
+;POSTCONDICIONES:
+;   - #FALTA
+;---------------------------------------------------------------------------------------
 ;Rutina para validar un fecha en formato gregoriano
 validarFechaGeneral:
 
@@ -773,13 +776,13 @@ validarFechaGeneral:
                         
             ;___validar mes___ 
             ;esta entre 1 y 31
-            call        validarMesGrego   
+            call        validarMesGrego   ;guarda la pos en el vector de meses para porx validacion     
             cmp		    byte[fechaEsValida],"N"	
             je		    ErrorValidarMesGeneral
 
             ;___validar dia___
             call        validarDiaGrego
-            cmp		    byte[fechaEsValida],"N"	
+            cmp		    byte[fechaEsValida],"N"	;Devuelve S en la variable esValid si el dia es
             je		    ErrorValidarDiaGeneral
 
             finvalidarFechaGeneral:
@@ -827,7 +830,11 @@ validarFechaGeneral:
             validarAnioGrego:
                 ;entre 1950 y 2049
                 mov         byte[fechaEsValida],"N"
-
+                
+                ;si lo hago mas mejor, valido contra un regitstro al q le mdeto anio max
+                ;mov        r10,word[AnioLimiteSup]
+                ;cmp        word[anioGrego],r10
+                ;cmp        r10,word[anioGrego] ;OJO CAMBIAR EL JUmp por jl
                 cmp         word[anioGrego],2050
                 jge         finValidarAnioGrego
 
@@ -926,9 +933,9 @@ convertirGregoARom:
     mov     dword[posEnVectoresRomanos],0 ;pongo en cero0
     
     sigDivision:
-        sub     rdx,rdx 
+        sub     rdx,rdx ;#IMPORTANTISIMOOOOO
 
-        sub     rbx,rbx ;quito basura por las dudas
+        sub     rbx,rbx ;#quito basura por las dudas
         mov     ebx,dword[posEnVectoresRomanos]
         
         imul    ebx,2  ;para el vecValoresRomanos son 2 bytes c/elemento
@@ -963,7 +970,8 @@ convertirGregoARom:
 
 
         loop  repeSimbolo
- 
+
+        
         sigSimbolo:
             inc         dword[posEnVectoresRomanos]
 
@@ -984,13 +992,13 @@ convertirGregoARom:
 concatenarSimbolo:
     mov     rcx,2  ;supongo no tiene espacio y copiare los 2 simbolos
     
-    mov     rdx,0   ;cargo con 0's por las dudas
+    mov     rdx,0   ;#
     add     dx,2    ;DX =TamAAgrandar numero romano
 
     ;EBX = Bytes en vecSimbolosRomanos 
     ;Aca, en vecSimbolosRomanos c/"elemento" son 3 bytes entonces
     ;multiplico *3
-    sub     ebx,ebx ;quito basura por las dudas
+    sub     ebx,ebx ;#quito basura por las dudas
     mov     ebx,dword[posEnVectoresRomanos]
     imul    ebx,3
     cmp     byte[vecSimbolosRomanos + ebx + 1]," " ; pregunto si tiene un espacio...
@@ -1019,6 +1027,43 @@ concatenarSimbolo:
     add      word[tamNumeroRomanoArmado],dx   ;le sumo bytes a crecer
     
     ret
+
+
+
+unDebug:
+    push rcx
+    push rax
+    push rdx
+    mov             rcx,debug
+    sub             rsp,32
+    call            printf
+    add             rsp,32
+    pop rdx
+    pop rax
+    pop rcx
+    
+    ret
+
+unDebugConInt:
+
+    ;push rcx
+    push rax
+    push rdx
+    push rcx
+    mov            word[aux],cx
+
+    mov            rcx,debugConInt
+    mov            rdx,[aux]
+    sub            rsp,32
+    call            printf
+    add             rsp,32
+    pop rcx
+    pop rdx
+    pop rax
+    ;pop rcx
+
+    ret
+
 
 ;-------------------------------------------------------------------------------------
 ;-> PRECONDICIONES: Requiere un dia, mes y anio guardados en 
@@ -1051,9 +1096,9 @@ convertirDiaGregoADiaJul:
         je      finRestarMeses    ;si es 1 o mas resto sig mes
 
         sub     rax,rax            
-        mov     ax,r10w    ;ax = mesAux
+        mov     ax,r10w    ;rax = mesAux
 
-        cwde    
+        cwde    ;#va????
         imul    eax,2   ;cada ele de vecDiasMeses es una word
         sub     rbx,rbx
         add     bx,[vecDiasMeses + eax - 2 ] ; mesAux - 2 bytes = mesAux - 1mes
@@ -1070,14 +1115,20 @@ convertirDiaGregoADiaJul:
 ;---------------------------------------------------------------------------------------
 ;-> PRECONDICIONES: debe haber un anio en [anioGrego]
 ;-> POSTCONDICIONES: deja el anio correspondiente a [anioGrego] en la var [anioJul]
-;-> #ACLARACION: Por homogeneidad, restringir previamente el ingreso en cualquier 
-    ;formato de fecha al rango [1950,2049] 
 ;---------------------------------------------------------------------------------------
 convertirAnioGregoAAnioJul:
+    ;-> PRECONDICIONES: Requiere un anio guardados en [anioGrego]  
+    ;-> POSTCONDICIONES: Deja el numero de dia en [diaJul]
+    ;# Si. Podrías considerar por ej un rango de años valido desde 1950 a 2049. 
+    ;O sea si se intentara convertir el año 1949 o menor lo consideras invalido, 
+    ;lo mismo para 2050 o mayor.
+    ;-> ACLARACION: Por homogeneidad, restringir previamente el ingreso en cualquier 
+    ;formato de fecha al rango [1950,2049] 
     
     sub     r10,r10 ;saco basura
     mov     r10w,[anioGrego]
 
+    ;#ver si puedo comparar diercto el r10 para no reusar o mismo anioJul
     cmp     word[anioGrego],2000
     jl      menorADosmil
     ;si es mayor o igual, resto 100 y luego 1900 = -100 -1900 = -2000
@@ -1110,7 +1161,7 @@ convertirRomAGrego:
 
     sigCharRom:
         
-        mov     rax,0   ;saco basura x las dudas
+        mov     rax,0   ;#saco basura x las dudas
         mov     ax,word[posEnNumeroRomano]  ;dde esta pos, 
         ;EAX = posEnNumero Romano
         cwde    ;muy importante... 
@@ -1129,7 +1180,7 @@ convertirRomAGrego:
         pop rcx
         ;deja en posEnVectoresRomanos la pos del simbolo posible a sumar
 
-        sub     r9,r9 ;saco basura x las dudas
+        sub     r9,r9 ;#saco basura x las dudas
         sub     ebx,ebx ;saco basura
         mov     ebx, dword[posEnVectoresRomanos] ;ebx = pos en vectores
         ;en el vector de simbolos, cada ele mide 2 bytes
@@ -1140,10 +1191,15 @@ convertirRomAGrego:
         chequeoSumOResta:
             ;pregunto por la sig leyra xa ver si es mayor o menor.
             ;primero busco su pos en el vec
-            mov     rcx,1 ;siempre copio 1 byte 
+            ;#CODIGO REPE, DSPS LO SACO
+            mov     rcx,1 ;siempre copio 1 byte #OJO EL ULTIMO 0?????
             
+            ;inc     eax ;EAX = posEnNumeroRomano + 1 xq voy a chequear sig letra
+            ;#ojo
             inc     rax
+            
             cwde    ;muy importante... 
+            ;#OJO
             cdqe
 
             cmp     byte[rdx + rax],0   ;si es 0 termino y ni entro, sino sigo
@@ -1164,7 +1220,7 @@ convertirRomAGrego:
             ;en el vector de simbolos, cada ele mide 2 bytes
             imul    ebx,2
             ;uso el r10w xq el r9 ya lo use para el primer simbolo
-            sub     r10,r10 ;Saco basura, (casi seguro que debo hacerlo)
+            sub     r10,r10 ;#Saco basura, (casi seguro que debo hacerlo)
             mov     r10w,[vecValoresRomanosSimple + ebx]  
             ;R10W = Sig Valor
 
@@ -1208,11 +1264,11 @@ copiarDigitoEnSimboloRomano:
     
     push    rcx
 
-    mov     rcx,1 ;siempre copio 1 byte
+    mov     rcx,1 ;siempre copio 1 byte #OJO EL ULTIMO 0?????
             
     LEA RSI,[rdx + rax]  ;dde este digito copio 1 byte        
 
-    LEA RDI,byte[simboloRomano] ;lo cargo ahi
+    LEA RDI,[simboloRomano] ;lo cargo ahi
 
     REP MOVSB
 
@@ -1231,10 +1287,10 @@ buscarPosCharRom:
     
     sigCharRomEnVec:
 
-        LEA     RSI,byte[simboloRomano]   ;dejo en el rsi el simbolo
+        LEA     RSI,[simboloRomano]   ;dejo en el rsi el simbolo
 
         MOV     RCX,1   ;bytes a comparar, siempre uno a la vez
-        sub     ebx,ebx ;quito basura por las dudas
+        sub     ebx,ebx ;#quito basura por las dudas
         mov     ebx,dword[posEnVectoresRomanos]
         imul    ebx,2   ;xq son de 2 bytes cada "elemento " (Letra + el 0)
 
@@ -1294,6 +1350,9 @@ convertirDiaJulADiaYMesGrego:
     cmp         byte[esBisiesto],"S"
     jne         sumarSigMesNoBisesto
     ;si es bisiesto
+    ;#VER posibilidad de hacer
+    ;lea        rdx, vecDiasMesesBisiestos 
+    ;y laburar con esa direc (xa el final)
     sumarSigMesBisesto:
 
         cmp     r10w,0          ;r10w = diaGregoPivot
